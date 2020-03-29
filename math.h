@@ -1712,12 +1712,149 @@ __forceinline SMMATRIX SMMatrixInverse(float * pDeterminant, const SMMATRIX & M)
 	return(mResult);
 }
 
+__forceinline float SMMatrixDeterminant(const SMMATRIX &M)
+{
+	static const float4 vSign(1.0f, -1.0f, 1.0f, -1.0f);
+
+	SMVECTOR V0;
+	V0.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(0, 0, 0, 1));
+	SMVECTOR V1;
+	V1.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(1, 1, 2, 2));
+	SMVECTOR V2;
+	V2.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(0, 0, 0, 1));
+	SMVECTOR V3;
+	V3.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(2, 3, 3, 3));
+	SMVECTOR V4;
+	V4.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(1, 1, 2, 2));
+	SMVECTOR V5;
+	V5.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(2, 3, 3, 3));
+
+	SMVECTOR P0;
+	SMVECTOR P1;
+	SMVECTOR P2;
+	P0.mmv = _mm_mul_ps(V0, V1);
+	P1.mmv = _mm_mul_ps(V2, V3);
+	P2.mmv = _mm_mul_ps(V4, V5);
+
+
+	V0.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(1, 1, 2, 2)); // XMVectorSwizzle<XM_SWIZZLE_Z, XM_SWIZZLE_Z, XM_SWIZZLE_Y, XM_SWIZZLE_Y>(M.r[2]);
+	V1.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(0, 0, 0, 1)); // XMVectorSwizzle<XM_SWIZZLE_Y, XM_SWIZZLE_X, XM_SWIZZLE_X, XM_SWIZZLE_X>(M.r[3]);
+	V2.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(2, 3, 3, 3)); // XMVectorSwizzle<XM_SWIZZLE_W, XM_SWIZZLE_W, XM_SWIZZLE_W, XM_SWIZZLE_Z>(M.r[2]);
+	V3.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(0, 0, 0, 1)); // XMVectorSwizzle<XM_SWIZZLE_Y, XM_SWIZZLE_X, XM_SWIZZLE_X, XM_SWIZZLE_X>(M.r[3]);
+	V4.mmv = _mm_shuffle_ps(M.r[2], M.r[2], _MM_SHUFFLE(2, 3, 3, 3)); // XMVectorSwizzle<XM_SWIZZLE_W, XM_SWIZZLE_W, XM_SWIZZLE_W, XM_SWIZZLE_Z>(M.r[2]);
+	V5.mmv = _mm_shuffle_ps(M.r[3], M.r[3], _MM_SHUFFLE(1, 1, 2, 2)); // XMVectorSwizzle<XM_SWIZZLE_Z, XM_SWIZZLE_Z, XM_SWIZZLE_Y, XM_SWIZZLE_Y>(M.r[3]);
+
+	V0.mmv = _mm_mul_ps(V0, V1);
+	P0.mmv = _mm_sub_ps(P0, V0);
+	V2.mmv = _mm_mul_ps(V2, V3);
+	P1.mmv = _mm_sub_ps(P1, V2);
+	V4.mmv = _mm_mul_ps(V4, V5);
+	P2.mmv = _mm_sub_ps(P2, V4);
+
+	// P0 = XMVectorNegativeMultiplySubtract(V0, V1, P0); // P0 - (V0, V1)
+	// P1 = XMVectorNegativeMultiplySubtract(V2, V3, P1);
+	// P2 = XMVectorNegativeMultiplySubtract(V4, V5, P2);
+
+	V0.mmv = _mm_shuffle_ps(M.r[1], M.r[1], _MM_SHUFFLE(2, 3, 3, 3));
+	V1.mmv = _mm_shuffle_ps(M.r[1], M.r[1], _MM_SHUFFLE(1, 1, 2, 2));
+	V2.mmv = _mm_shuffle_ps(M.r[1], M.r[1], _MM_SHUFFLE(0, 0, 0, 1));
+
+	SMVECTOR S;
+	S.mmv = _mm_mul_ps(M.r[0], vSign);
+	SMVECTOR R;
+	R.mmv = _mm_mul_ps(V0, P0);
+	V1.mmv = _mm_mul_ps(V1, P1);
+	R.mmv = _mm_sub_ps(R, V1);
+	V2.mmv = _mm_mul_ps(V2, P2);
+	R.mmv = _mm_add_ps(V2, R);
+
+	return(SMVector4Dot(S, R));
+}
+
 __forceinline float SMMatrix3x3Determinant(const SMMATRIX & M)
 {
 	return(M._11 * (M._22 * M._33 - M._32 * M._23)
 		- M._12 * (M._21 * M._33 - M._31 * M._23)
 		+ M._13 * (M._21 * M._32 - M._31 * M._22));
 }
+
+__forceinline bool SMSoLE3x3Solve(const SMMATRIX &mCoefficientsConstants, float3 *pOut)
+{
+	SMMATRIX mTemp = mCoefficientsConstants;
+	for(int j = 0; j < 3; ++j)
+	{
+		int iMaxRow = 0;
+		float fMaxRow = -1.0f;
+		for(int i = j; i < 3; ++i)
+		{
+			if(fabsf(mTemp.m[i][j]) > fMaxRow)
+			{
+				fMaxRow = fabsf(mTemp.m[i][j]);
+				iMaxRow = i;
+			}
+		}
+		if(fMaxRow < FLT_EPSILON)
+		{
+			return(false);
+		}
+		if(iMaxRow != j)
+		{
+			SMVECTOR tmp = mTemp.r[iMaxRow];
+			mTemp.r[iMaxRow] = mTemp.r[j];
+			mTemp.r[j] = tmp;
+		}
+
+		for(int i = j; i < 3; ++i)
+		{
+			if(fabsf(mTemp.m[i][j]) > FLT_EPSILON)
+			{
+				mTemp.r[i] /= mTemp.m[i][j];
+
+				if(i != j)
+				{
+					mTemp.r[i] -= mTemp.r[j];
+				}
+			}
+		}
+	}
+
+	if(pOut)
+	{
+		for(int i = 2; i >= 0; --i)
+		{
+			(*pOut)[i] = mTemp.m[i][3];
+			for(int j = 0; j < i; ++j)
+			{
+				mTemp.m[j][3] -= mTemp.m[j][i] * (*pOut)[i];
+			}
+		}
+	}
+
+	return(true);
+}
+
+__forceinline float3 SMTriangleCircumcenter3(const float3 &vA, const float3 &vB, const float3 &vC)
+{
+	float3 D = (vA + vC) * 0.5f;
+	float3 E = (vA + vB) * 0.5f;
+	float3 d = vA - vC;
+	float3 e = vA - vB;
+	float3 n = SMVector3Cross(d, e);
+
+	float fG = SMVector3Dot(D, d);
+	float fH = SMVector3Dot(E, e);
+	float fI = SMVector3Dot(D, n);
+
+	float3 vPoint;
+	SMSoLE3x3Solve(SMMATRIX(
+		float4(d, fG),
+		float4(e, fH),
+		float4(n, fI),
+		float4(0.0f, 0.0f, 0.0f, 1.0f)
+		), &vPoint);
+	return(vPoint);
+}
+
 
 __forceinline float3 operator*(const float3 & V, const SMMATRIX & M)
 {
@@ -1803,9 +1940,9 @@ public:
 		float3 vec;
 		if(u == -v)
 		{
-			float _x = abs(v.x);
-			float _y = abs(v.y);
-			float _z = abs(v.z);
+			float _x = fabsf(v.x);
+			float _y = fabsf(v.y);
+			float _z = fabsf(v.z);
 			float3 vOther = _x < _y ? (_x < _z ? float3(1.0f, 0.0f, 0.0f) : float3(0.0f, 0.0f, 1.0f)) : (_y < _z ? float3(0.0f, 1.0f, 0.0f) : float3(0.0f, 0.0f, 1.0f));
 
 			vec = SMVector3Cross(v, vOther);
