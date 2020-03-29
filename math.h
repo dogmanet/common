@@ -485,15 +485,15 @@ struct float4_t
 	float z;
 	float w;
 
-	float4_t():x(0.0f), y(0.0f), z(0.0f), w(0.0f)
+	float4_t() : float4_t(0.0, 0.0, 0.0, 0.0)
 	{
 	}
 
-	float4_t(float _x, float _y, float _z, float _w):x(_x), y(_y), z(_z), w(_w)
+	float4_t(float _x, float _y, float _z, float _w) :x(_x), y(_y), z(_z), w(_w)
 	{
 	}
 
-    float4_t(const float4 & f) : float4_t(f.x, f.y, f.z, f.w)
+	float4_t(const float4 & f) : float4_t(f.x, f.y, f.z, f.w)
 	{
 	}
 

@@ -259,12 +259,12 @@ String & String::operator=(const String & str)
 
 String & String::operator=(const char * str)
 {
-    if (str != m_szString)
-    {
-        release();
-        m_szString = new char[strlen(str) + 1];
-        memcpy(m_szString, str, strlen(str) + 1);
-    }
+	if (str != m_szString)
+	{
+		release();
+		m_szString = new char[strlen(str) + 1];
+		memcpy(m_szString, str, strlen(str) + 1);
+	}
 	return(*this);
 }
 
