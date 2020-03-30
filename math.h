@@ -819,7 +819,7 @@ __forceinline float SMVector3Dot(const float3 & V1)
 
 __forceinline float3 SMVector3Cross(const float3 & V1, const float3 & V2)
 {
-	static const SMVECTORI32 mask = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000};
+	static const SMVECTORI32 mask = {(int)0xFFFFFFFF, (int)0xFFFFFFFF, (int)0xFFFFFFFF, 0x00000000};
 	SMVECTOR vTemp1;
 	vTemp1.mmv = _mm_shuffle_ps(V1, V1, _MM_SHUFFLE(3, 0, 2, 1));
 	
@@ -1379,7 +1379,7 @@ __forceinline SMMATRIX SMMatrixRotationNormal(const float3 & NormalAxis, float A
 	SMVECTOR V0, V1, V2;
 	SMVECTOR R0, R1, R2;
 	SMVECTOR C0, C1, C2;
-	static const SMVECTORI32 mask = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000};
+	static const SMVECTORI32 mask = {(int)0xFFFFFFFF, (int)0xFFFFFFFF, (int)0xFFFFFFFF, 0x00000000};
 	SMMATRIX M;
 
 	float fSinAngle = sinf(Angle);
@@ -1429,8 +1429,8 @@ __forceinline SMMATRIX SMMatrixRotationAxis(const float3 & Axis, float Angle)
 
 __forceinline SMMATRIX SMMatrixLookToLH(const float3 & EyePosition, const float3 & EyeDirection, const float3 & UpDirection)
 {
-	static const SMVECTORI32 mask3 = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000};
-	static const SMVECTORI32 maskW = {0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFF};
+	static const SMVECTORI32 mask3 = {(int)0xFFFFFFFF, (int)0xFFFFFFFF, (int)0xFFFFFFFF, 0x00000000};
+	static const SMVECTORI32 maskW = {0x00000000, 0x00000000, 0x00000000, (int)0xFFFFFFFF};
 	SMMATRIX M;
 	SMVECTOR R2 = SMVector3Normalize(EyeDirection);
 	SMVECTOR R0 = SMVector3Cross(UpDirection, R2);
@@ -1464,7 +1464,7 @@ __forceinline SMMATRIX SMMatrixLookAtLH(const float3 & EyePosition, const float3
 
 __forceinline SMMATRIX SMMatrixPerspectiveLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
 {
-	SMVECTORI32 maskY = {0x00000000, 0xFFFFFFFF, 0x00000000, 0x00000000};
+	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
 	float TwoNearZ = NearZ + NearZ;
 	float fRange = FarZ / (FarZ - NearZ);
@@ -1501,7 +1501,7 @@ __forceinline SMMATRIX SMMatrixPerspectiveLH(float ViewWidth, float ViewHeight, 
 
 __forceinline SMMATRIX SMMatrixPerspectiveFovLH(float FovAngleY, float AspectRatio, float NearZ, float FarZ)
 {
-	SMVECTORI32 maskY = {0x00000000, 0xFFFFFFFF, 0x00000000, 0x00000000};
+	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
 	float SinFov = sinf(0.5f * FovAngleY);
 	float CosFov = cosf(0.5f * FovAngleY);
@@ -1540,7 +1540,7 @@ __forceinline SMMATRIX SMMatrixPerspectiveFovLH(float FovAngleY, float AspectRat
 
 __forceinline SMMATRIX SMMatrixOrthographicLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
 {
-	SMVECTORI32 maskY = {0x00000000, 0xFFFFFFFF, 0x00000000, 0x00000000};
+	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
 	float fRange = 1.0f / (FarZ - NearZ);
 	
@@ -1910,8 +1910,8 @@ public:
 
 	SMQuaternion::SMQuaternion(float angle, char ax)
 	{
-		float sin_a = sin(angle / 2);
-		float cos_a = cos(angle / 2);
+		float sin_a = sinf(angle / 2.0f);
+		float cos_a = cosf(angle / 2.0f);
 		x = y = z = w = 0.0f;
 		switch(ax)
 		{
@@ -2003,7 +2003,7 @@ public:
 
 			if(tr > 0.0)
 			{
-				s = sqrt(tr + 1.0f);
+				s = sqrtf(tr + 1.0f);
 				w = s / 2.0f;
 				s = 0.5f / s;
 				x = (m[1][2] - m[2][1]) * s;
@@ -2018,7 +2018,7 @@ public:
 				j = nxt[i];
 				k = nxt[j];
 
-				s = sqrt((m[i][i] - (m[j][j] + m[k][k])) + 1.0f);
+				s = sqrtf((m[i][i] - (m[j][j] + m[k][k])) + 1.0f);
 
 				q[i] = s * 0.5f;
 				
@@ -2102,7 +2102,7 @@ __forceinline SMQuaternion SMQuaternion::Normalize()
 
 __forceinline float SMQuaternion::Length()
 {
-	return(sqrt(x * x + y * y + z * z + w * w));
+	return(sqrtf(x * x + y * y + z * z + w * w));
 }
 
 __forceinline SMQuaternion SMQuaternion::Inverse()
@@ -2302,8 +2302,8 @@ __forceinline float3 SMMatrixToEuler(const SMMATRIX & mat)
 	float RADIANS = 180.0f / SM_PI;
 	float D;
 	float3 res;
-	res.y = D = -asin(mat._13);
-	float C = cos(res.y);
+	res.y = D = -asinf(mat._13);
+	float C = cosf(res.y);
 	//res.y *= RADIANS;
 	float tr_x, tr_y;
 
@@ -2312,12 +2312,12 @@ __forceinline float3 SMMatrixToEuler(const SMMATRIX & mat)
 			tr_x = mat._33 / C;
 			tr_y = -mat._23 / C;
 
-			res.x = atan2(tr_y, tr_x)/* * RADIANS*/;
+			res.x = atan2f(tr_y, tr_x)/* * RADIANS*/;
 
 			tr_x = mat._11 / C;
 			tr_y = -mat._12 / C;
 
-			res.z = atan2(tr_y, tr_x)/* * RADIANS*/;
+			res.z = atan2f(tr_y, tr_x)/* * RADIANS*/;
 		}
 		else
 		{
@@ -2326,7 +2326,7 @@ __forceinline float3 SMMatrixToEuler(const SMMATRIX & mat)
 			tr_x = mat._22;
 			tr_y = mat._21;
 
-			res.z = atan2(tr_y, tr_x)/* * RADIANS*/;
+			res.z = atan2f(tr_y, tr_x)/* * RADIANS*/;
 		}
 //D3DXToRadian
 	//res.x = -SMToRadian(res.x);
