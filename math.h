@@ -663,7 +663,7 @@ __declspec(align(16)) struct SMMATRIX
 	};
 
 	SMMATRIX & operator*=(const SMMATRIX & M);
-	SMMATRIX operator*(const SMMATRIX & M);
+	SMMATRIX operator*(const SMMATRIX & M) const;
 #ifdef SM_D3D_CONVERSIONS
 	operator D3DXMATRIX()
 	{
@@ -1305,7 +1305,7 @@ __forceinline SMMATRIX & SMMATRIX::operator *= (const SMMATRIX & M)
 	return(*this);
 }
 
-__forceinline SMMATRIX SMMATRIX::operator*(const SMMATRIX & M)
+__forceinline SMMATRIX SMMATRIX::operator*(const SMMATRIX & M) const
 {
 	return(SMMatrixMultiply(*this, M));
 }
