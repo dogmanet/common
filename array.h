@@ -208,7 +208,7 @@ public:
 		{
 			DestructInterval(0, Size - 1);
 		}
-		free(Data);
+		_aligned_free(Data);
 	}
 
 	void clear()
@@ -217,7 +217,7 @@ public:
 		{
 			DestructInterval(0, Size - 1);
 		}
-		free(Data);
+		_aligned_free(Data);
 		Size = 0;
 		AllocSize = 0;
 		Data = NULL;
@@ -284,7 +284,7 @@ protected:
 		{
 			return;
 		}
-		T *tmpData = (T*)malloc(sizeof(T) * NewSize);
+		T *tmpData = (T*)_aligned_malloc(sizeof(T) * NewSize, alignof(T));
 		assert(tmpData);
 		if(!tmpData)
 		{
@@ -300,7 +300,7 @@ protected:
 		this->AllocSize = NewSize;
 		T * tmpDel = this->Data;
 		this->Data = tmpData;
-		free(tmpDel);
+		_aligned_free(tmpDel);
 	}
 
 	void ConstructInterval(UINT start, UINT end)

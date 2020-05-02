@@ -82,6 +82,10 @@ typedef void* SXWINDOW;
 #define mem_free(a) free(a)
 #define mem_alloc(a) malloc(a)
 
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#	define alignof __alignof
+#endif
+
 inline const char * basename(const char * str)
 {
 	const char * pos = str;

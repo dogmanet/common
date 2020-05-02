@@ -23,6 +23,10 @@ void operator delete(void* ptr)\
 {\
 	_aligned_free(ptr);\
 };\
+void* operator new(size_t size, void *ptr)\
+{\
+	return(ptr);\
+};\
 \
 void* operator new[](size_t size)\
 {\
