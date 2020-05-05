@@ -2509,28 +2509,6 @@ __forceinline SMPLANE SMPlaneNormalize(const SMPLANE &P)
 	return(P * fInvLen);
 }
 
-__forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, const float3 &vMax)
-{
-	int i = 0;
-	i += (SMVector3Dot(P, vMin) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMin.x, vMin.y, vMax.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMin.x, vMax.y, vMin.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMin.x, vMax.y, vMax.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMax.x, vMin.y, vMin.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMax.x, vMin.y, vMax.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, float3(vMax.x, vMax.y, vMin.z)) > -P.w) ? 1 : 0;
-	i += (SMVector3Dot(P, vMax) > -P.w) ? 1 : 0;
-	return(i > 0 && i < 8);
-}
-
-__forceinline bool SMAABBIntersectAABB(const float3 &vMinA, const float3 &vMaxA, const float3 &vMinB, const float3 &vMaxB)
-{
-	if(vMaxA.x < vMinB.x || vMinA.x > vMaxB.x) return(false);
-	if(vMaxA.y < vMinB.y || vMinA.y > vMaxB.y) return(false);
-	if(vMaxA.z < vMinB.z || vMinA.z > vMaxB.z) return(false);
-	return(true);
-}
-
 __forceinline bool SMVector4EqualEpsilon(const float4 &A, const float4 &B, float fEpsilon)
 {
 	float4 vDelta = A - B;
@@ -2539,13 +2517,51 @@ __forceinline bool SMVector4EqualEpsilon(const float4 &A, const float4 &B, float
 	return((_mm_movemask_ps(vTemp) == 0xf) != 0);
 }
 
-
 __forceinline bool SMPlaneEqualEpsilon(const SMPLANE &A, const SMPLANE &B, float fEpsilon)
 {
 	return(SMVector4EqualEpsilon(SMPlaneNormalize(A), SMPlaneNormalize(B), fEpsilon));
 }
 
 //##########################################################################
+
+__declspec(align(16)) struct SMAABB
+{
+	SMAABB() = default;
+	SMAABB(const float3 &vMin_, const float3 &vMax_):
+		vMin(vMin_), vMax(vMax_)
+	{
+	}
+
+	float3 vMin;
+	float3 vMax;
+};
+
+__forceinline SMAABB operator+(const SMAABB &aabb, const SMVECTOR &V)
+{
+	return(SMAABB(aabb.vMin + V, aabb.vMax + V));
+};
+__forceinline SMAABB operator+(const SMVECTOR &V, const SMAABB &aabb)
+{
+	return(aabb + V);
+};
+
+__forceinline SMAABB operator-(const SMAABB &aabb, const SMVECTOR &V)
+{
+	return(SMAABB(aabb.vMin - V, aabb.vMax - V));
+};
+__forceinline SMAABB operator-(const SMVECTOR &V, const SMAABB &aabb)
+{
+	return(aabb - V);
+};
+
+__forceinline SMAABB operator*(const SMAABB &aabb, float f)
+{
+	return(SMAABB(aabb.vMin * f, aabb.vMax * f));
+};
+__forceinline SMAABB operator/(const SMAABB &aabb, float f)
+{
+	return(SMAABB(aabb.vMin / f, aabb.vMax / f));
+};
 
 __forceinline float SMDistancePointAABB(const float3 &vPoint, const float3 &vMin, const float3 &vMax)
 {
@@ -2730,6 +2746,63 @@ __forceinline float SMDistancePointAABB(const float3 &vPoint, const float3 &vMin
 		}
 	}
 
+}
+__forceinline float SMDistancePointAABB(const float3 &vPoint, const SMAABB &aabb)
+{
+	return(SMDistancePointAABB(vPoint, aabb.vMin, aabb.vMax));
+}
+
+__forceinline float SMAABBVolume(const SMAABB &aabb)
+{
+	SMVECTOR vDims;
+	
+	vDims.mmv = _mm_sub_ps(aabb.vMax, aabb.vMin);
+
+	SMVECTOR vTemp;
+	vTemp.mmv = _mm_shuffle_ps(vDims, vDims, _MM_SHUFFLE(2, 1, 2, 1));
+
+	vDims.mmv = _mm_mul_ss(vDims, vTemp);
+
+	vTemp.mmv = _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(1, 1, 1, 1));
+
+	vDims.mmv = _mm_mul_ss(vDims, vTemp);
+
+	return(vDims.x);
+}
+
+__forceinline SMAABB SMAABBConvex(const SMAABB &A, const SMAABB &B)
+{
+	return(SMAABB(SMVectorMin(A.vMin, B.vMin), SMVectorMax(A.vMax, B.vMax)));
+}
+
+__forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, const float3 &vMax)
+{
+	int i = 0;
+	i += (SMVector3Dot(P, vMin) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMin.x, vMin.y, vMax.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMin.x, vMax.y, vMin.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMin.x, vMax.y, vMax.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMax.x, vMin.y, vMin.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMax.x, vMin.y, vMax.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, float3(vMax.x, vMax.y, vMin.z)) > -P.w) ? 1 : 0;
+	i += (SMVector3Dot(P, vMax) > -P.w) ? 1 : 0;
+	return(i > 0 && i < 8);
+}
+__forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const SMAABB &aabb)
+{
+	return(SMPlaneIntersectAABB(P, aabb.vMin, aabb.vMax));
+}
+
+__forceinline bool SMAABBIntersectAABB(const float3 &vMinA, const float3 &vMaxA, const float3 &vMinB, const float3 &vMaxB)
+{
+	if(vMaxA.x < vMinB.x || vMinA.x > vMaxB.x) return(false);
+	if(vMaxA.y < vMinB.y || vMinA.y > vMaxB.y) return(false);
+	if(vMaxA.z < vMinB.z || vMinA.z > vMaxB.z) return(false);
+	return(true);
+}
+__forceinline bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB)
+{
+	return(SMAABBIntersectAABB(aabbA.vMin, aabbA.vMax, aabbB.vMin, aabbB.vMax));
 }
 
 //##########################################################################
