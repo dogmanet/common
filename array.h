@@ -159,6 +159,11 @@ public:
 		return(*this);
 	}
 
+	T& get(UINT key)
+	{
+		return this->operator[](key);
+	}
+
 	T & operator[](UINT key)
 	{
 		if(key > ((UINT)-1) - 128)
@@ -186,6 +191,11 @@ public:
 	void SetKeyOC(UINT key, T& val)
 	{
 		Data[key] = val;
+	}
+
+	const T& get(UINT key) const
+	{
+		return this->operator[](key);
 	}
 
 	const T & operator[](UINT key) const
