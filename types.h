@@ -4,8 +4,8 @@ Copyright © Vitaliy Buturlin, Evgeny Danilovich, 2017
 See the license in LICENSE
 ******************************************************/
 
-#ifndef sxtypes_h
-#define sxtypes_h
+#ifndef __TYPES_H
+#define __TYPES_H
 
 #include <stdint.h>
 #include <string.h>
@@ -13,6 +13,7 @@ See the license in LICENSE
 #include <ctype.h>
 #include <assert.h>
 #include <mutex>
+#include <atomic>
 
 using std::mutex;
 typedef std::unique_lock<std::mutex> ScopedLock;
@@ -86,7 +87,127 @@ typedef void* SXWINDOW;
 #	define alignof __alignof
 #endif
 
-inline const char * basename(const char * str)
+
+#if defined(_MSC_VER)
+#define XALIGNED(x) __declspec(align(x))
+#elif defined(__GNUC__)
+#define XALIGNED(x) __attribute__ ((aligned(x)))
+#else
+#error "unsupported compiler"
+#endif
+
+#ifdef _MSC_VER
+#define XMETHODCALLTYPE __stdcall
+#define XINLINE __forceinline
+#elif defined(__GNUC__)
+//#define XMETHODCALLTYPE __attribute__((stdcall))
+#define XMETHODCALLTYPE
+#define XINLINE inline __attribute__((always_inline))
+#else
+#error "unsupported compiler"
+#endif
+
+
+typedef struct _XGUID
+{
+	_XGUID()
+	{
+	}
+	_XGUID(unsigned long l, unsigned short w1, unsigned short w2,
+		unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4,
+		unsigned char b5, unsigned char b6, unsigned char b7, unsigned char b8):
+		Data1(l), Data2(w1), Data3(w2), Data40(b1), Data41(b2), Data43(b3), Data44(b4),
+		Data45(b5), Data46(b6), Data47(b7)
+	{
+	}
+	unsigned long  Data1 = 0;
+	unsigned short Data2 = 0;
+	unsigned short Data3 = 0;
+	unsigned char  Data40 = 0;
+	unsigned char  Data41 = 0;
+	unsigned char  Data42 = 0;
+	unsigned char  Data43 = 0;
+	unsigned char  Data44 = 0;
+	unsigned char  Data45 = 0;
+	unsigned char  Data46 = 0;
+	unsigned char  Data47 = 0;
+} XGUID;
+
+#define DEFINE_XGUID(l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    XGUID(l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)
+
+
+inline bool operator<(const XGUID &a, const XGUID &b)
+{
+	return(memcmp(&a, &b, sizeof(XGUID)) < 0);
+}
+
+inline bool operator==(const XGUID &a, const XGUID &b)
+{
+	return(memcmp(&a, &b, sizeof(XGUID)) == 0);
+}
+
+class IXUnknown
+{
+public:
+	virtual void XMETHODCALLTYPE AddRef() = 0;
+
+	virtual void XMETHODCALLTYPE Release() = 0;
+
+	virtual UINT XMETHODCALLTYPE getVersion() = 0;
+
+	virtual void XMETHODCALLTYPE getInternalData(const XGUID *pGUID, void **ppOut) = 0;
+};
+
+#ifdef __cplusplus
+#define IXUNKNOWN_IMPLEMENTATION(name, ...)                                              \
+template <class T>                                                                       \
+class name: public __VA_ARGS__ T                                                         \
+{                                                                                        \
+protected:                                                                               \
+	name<T>()                                                                            \
+	{                                                                                    \
+		m_uRefCount.store(1);                                                            \
+	}                                                                                    \
+	virtual ~name<T>() = default;                                                        \
+	                                                                                     \
+	std::atomic_uint m_uRefCount;                                                        \
+public:                                                                                  \
+	void XMETHODCALLTYPE AddRef() override                                               \
+	{                                                                                    \
+		++m_uRefCount;                                                                   \
+	}                                                                                    \
+	void XMETHODCALLTYPE Release() override                                              \
+	{                                                                                    \
+		--m_uRefCount;                                                                   \
+		if(!m_uRefCount)                                                                 \
+		{                                                                                \
+			delete this;                                                                 \
+		}                                                                                \
+	}                                                                                    \
+	                                                                                     \
+	UINT XMETHODCALLTYPE getVersion() override                                           \
+	{                                                                                    \
+		return(0);                                                                       \
+	}                                                                                    \
+	                                                                                     \
+	void XMETHODCALLTYPE getInternalData(const XGUID *pGUID, void **ppOut) override      \
+	{                                                                                    \
+		*ppOut = NULL;                                                                   \
+	}                                                                                    \
+}
+
+IXUNKNOWN_IMPLEMENTATION(IXUnknownImplementation);
+IXUNKNOWN_IMPLEMENTATION(IXUnknownVirtualImplementation, virtual);
+
+#define XIMPLEMENT_VERSION(version)                                                      \
+virtual UINT XMETHODCALLTYPE getVersion() override                                       \
+{                                                                                        \
+	return(version);                                                                     \
+}
+#endif
+
+inline const char* basename(const char *str)
 {
 	const char * pos = str;
 	while(*str)
@@ -100,7 +221,7 @@ inline const char * basename(const char * str)
 	return(pos);
 }
 
-inline const char * dirname(char * str)
+inline const char* dirname(char *str)
 {
 	char * pos = str, *ret = str;
 	while(*str)
@@ -115,7 +236,7 @@ inline const char * dirname(char * str)
 	return(ret);
 }
 
-inline const char * canonize_path(char * str)
+inline const char* canonize_path(char *str)
 {
 	char * ret = str;
 	while(*str)
@@ -129,7 +250,7 @@ inline const char * canonize_path(char * str)
 	return(ret);
 }
 
-inline const char * strip_prefix(const char * str, const char * pref)
+inline const char* strip_prefix(const char *str, const char *pref)
 {
 	size_t len = strlen(pref);
 	if(!memcmp(str, pref, len))
@@ -139,12 +260,12 @@ inline const char * strip_prefix(const char * str, const char * pref)
 	return(str);
 }
 
-inline int fstrcmp(const char * str1, const char * str2)
+inline int fstrcmp(const char *str1, const char *str2)
 {
 	return(str1 == str2 ? 0 : strcmp(str1, str2));
 }
 
-inline int parse_str(char * str, char ** ppOut, int iMaxSize, char delim=',')
+inline int parse_str(char *str, char **ppOut, int iMaxSize, char delim=',')
 {
 	//" val ; qwe;asd "
 	int c = 0;

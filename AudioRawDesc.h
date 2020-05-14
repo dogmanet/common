@@ -7,6 +7,10 @@ See the license in LICENSE
 #ifndef __AUDIORAWDESC_H
 #define __AUDIORAWDESC_H
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4800)
+#endif
+
 #include <assert.h>
 
 //! тип аудио семпла

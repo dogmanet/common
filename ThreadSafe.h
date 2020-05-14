@@ -8,6 +8,7 @@ See the license in LICENSE
 #define __THREADSAFE_H
 
 #include <memory>
+#include <mutex>
 
 //! тип блокированного мьютекса для ThreadSafe::scoped_lock
 typedef std::unique_lock<std::mutex> mulock;

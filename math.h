@@ -12,6 +12,7 @@ See the license in LICENSE
 #include <cstdlib>
 #include <assert.h>
 #include <float.h>
+#include "types.h"
 
 #define SX_ALIGNED_OP_MEM \
 void* operator new(size_t size)\
@@ -57,6 +58,7 @@ void operator delete[](void* ptr)\
 #define SMToRadian(degree)((degree)*(SM_PI / 180.0f))
 #define SMToAngle(rad)((rad)*(180.0f / SM_PI))
 
+/*
 #ifndef max
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #endif
@@ -64,13 +66,14 @@ void operator delete[](void* ptr)\
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
+*/
 
-inline float lerpf(float x,float y,float s)
+XINLINE float lerpf(float x, float y, float s)
 {
 	return x + s*(y - x);
 }
 
-inline int randi(int iMin, int iMax)
+XINLINE int randi(int iMin, int iMax)
 {
 	if (iMin >= iMax)
 		return iMin;
@@ -78,7 +81,7 @@ inline int randi(int iMin, int iMax)
 	return ((rand() % (iMax - iMin)) + iMin);
 }
 
-inline float randf(float lowBound, float highBound)
+XINLINE float randf(float lowBound, float highBound)
 {
 	if (lowBound >= highBound)
 		return lowBound;
@@ -88,7 +91,7 @@ inline float randf(float lowBound, float highBound)
 	return lerpf(lowBound, highBound, f);// (f * (highBound - lowBound)) + lowBound;
 }
 
-inline float clampf(float x, float a, float b)
+XINLINE float clampf(float x, float a, float b)
 {
 	if (x >= a && x <= b)
 		return x;
@@ -103,12 +106,12 @@ inline float clampf(float x, float a, float b)
 	return(0);
 }
 
-inline float saturatef(float x)
+XINLINE float saturatef(float x)
 {
 	return clampf(x, 0.f, 1.f);
 }
 
-__declspec(align(16)) struct SMVECTOR
+XALIGNED(16) struct SMVECTOR
 {
 	union
 	{
@@ -216,7 +219,7 @@ __declspec(align(16)) struct SMVECTOR
 	}
 };
 
-__declspec(align(16)) struct SMVECTORI32
+XALIGNED(16) struct SMVECTORI32
 {
 	union
 	{
@@ -255,7 +258,7 @@ __declspec(align(16)) struct SMVECTORI32
 	}
 };
 
-__declspec(align(16)) struct float2: public SMVECTOR
+XALIGNED(16) struct float2: public SMVECTOR
 {
 	float2()
 	{
@@ -305,7 +308,7 @@ __declspec(align(16)) struct float2: public SMVECTOR
 #endif
 };
 
-__declspec(align(16)) struct float3: public SMVECTOR
+XALIGNED(16) struct float3: public SMVECTOR
 {
 	float3()
 	{
@@ -366,7 +369,7 @@ __declspec(align(16)) struct float3: public SMVECTOR
 #endif
 };
 
-__declspec(align(16)) struct float4: public SMVECTOR
+XALIGNED(16) struct float4: public SMVECTOR
 {
 	float4()
 	{
@@ -452,7 +455,7 @@ struct float2_t
 	{
 	}
 
-	__forceinline operator float2() const
+	XINLINE operator float2() const
 	{
 		return(float2(x, y));
 	}
@@ -476,7 +479,7 @@ struct float3_t
 	{
 	}
 
-	__forceinline operator float3() const
+	XINLINE operator float3() const
 	{
 		return(float3(x, y, z));
 	}
@@ -501,55 +504,55 @@ struct float4_t
 	{
 	}
 
-	__forceinline operator float4() const
+	XINLINE operator float4() const
 	{
 		return(float4(x, y, z, w));
 	}
 };
 
 
-__forceinline SMVECTOR operator+(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR operator+(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR r(V1);
 	r += V2;
 	return(r);
 };
 
-__forceinline SMVECTOR operator-(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR operator-(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR r(V1);
 	r -= V2;
 	return(r);
 };
 
-__forceinline SMVECTOR operator-(const SMVECTOR & V1)
+XINLINE SMVECTOR operator-(const SMVECTOR & V1)
 {
 	SMVECTOR r(V1);
 	r *= float4(-1.0f, -1.0f, -1.0f, -1.0f);
 	return(r);
 };
 
-__forceinline SMVECTOR operator*(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR operator*(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR r(V1);
 	r *= V2;
 	return(r);
 };
 
-__forceinline SMVECTOR operator/(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR operator/(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR r(V1);
 	r /= V2;
 	return(r);
 };
 
-__forceinline SMVECTOR operator*(const SMVECTOR & V1, const float & F)
+XINLINE SMVECTOR operator*(const SMVECTOR & V1, const float & F)
 {
 	SMVECTOR r(V1);
 	r *= F;
 	return(r);
 };
-__forceinline SMVECTOR operator*(const float & F, const SMVECTOR & V1)
+XINLINE SMVECTOR operator*(const float & F, const SMVECTOR & V1)
 {
 	SMVECTOR r(V1);
 	r *= F;
@@ -557,7 +560,7 @@ __forceinline SMVECTOR operator*(const float & F, const SMVECTOR & V1)
 };
 
 
-__forceinline SMVECTOR operator/(const SMVECTOR & V1, const float & F)
+XINLINE SMVECTOR operator/(const SMVECTOR & V1, const float & F)
 {
 	SMVECTOR r(V1);
 	r /= F;
@@ -565,19 +568,19 @@ __forceinline SMVECTOR operator/(const SMVECTOR & V1, const float & F)
 };
 
 
-__forceinline SMVECTOR & SMVECTOR::operator *= (const float & F)
+XINLINE SMVECTOR & SMVECTOR::operator *= (const float & F)
 {
 	mmv = _mm_mul_ps(mmv, float4(F, F, F, F));
 	return(*this);
 };
 
-__forceinline SMVECTOR & SMVECTOR::operator /= (const float & F)
+XINLINE SMVECTOR & SMVECTOR::operator /= (const float & F)
 {
 	mmv = _mm_div_ps(mmv, float4(F, F, F, F));
 	return(*this);
 };
 
-__declspec(align(16)) struct SMMATRIX
+XALIGNED(16) struct SMMATRIX
 {
 	union
 	{
@@ -681,33 +684,33 @@ __declspec(align(16)) struct SMMATRIX
 
 typedef SMMATRIX float4x4;
 
-__forceinline SMVECTOR SMVectorZero()
+XINLINE SMVECTOR SMVectorZero()
 {
 	SMVECTOR v;
 	v.mmv = _mm_setzero_ps();
 	return(v);
 }
 
-__forceinline SMVECTOR SMVectorMin(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR SMVectorMin(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR v;
 	v.mmv = _mm_min_ps(V1, V2);
 	return(v);
 }
 
-__forceinline SMVECTOR SMVectorMax(const SMVECTOR & V1, const SMVECTOR & V2)
+XINLINE SMVECTOR SMVectorMax(const SMVECTOR & V1, const SMVECTOR & V2)
 {
 	SMVECTOR v;
 	v.mmv = _mm_max_ps(V1, V2);
 	return(v);
 }
 
-__forceinline SMVECTOR SMVectorAbs(const SMVECTOR &V)
+XINLINE SMVECTOR SMVectorAbs(const SMVECTOR &V)
 {
 	return(SMVectorMax(V, -V));
 }
 
-__forceinline SMVECTOR SMVectorLerp(const SMVECTOR & V1, const SMVECTOR & V2, float t)
+XINLINE SMVECTOR SMVectorLerp(const SMVECTOR & V1, const SMVECTOR & V2, float t)
 {
 	SMVECTOR L, S;
 	SMVECTOR Result;
@@ -721,7 +724,7 @@ __forceinline SMVECTOR SMVectorLerp(const SMVECTOR & V1, const SMVECTOR & V2, fl
 	return(Result);
 }
 
-__forceinline float SMVector2Dot(const float2 & V1, const float2 & V2)
+XINLINE float SMVector2Dot(const float2 & V1, const float2 & V2)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq .mmv = _mm_mul_ps(V1, V2);
@@ -731,7 +734,7 @@ __forceinline float SMVector2Dot(const float2 & V1, const float2 & V2)
 	return(vLengthSq.x);
 }
 
-__forceinline float2 SMVector2Cross(const float2 & V1, const float2 & V2)
+XINLINE float2 SMVector2Cross(const float2 & V1, const float2 & V2)
 {
 	SMVECTOR vResult;
 	vResult.mmv = _mm_shuffle_ps(V2, V2, _MM_SHUFFLE(0, 1, 0, 1));
@@ -743,7 +746,7 @@ __forceinline float2 SMVector2Cross(const float2 & V1, const float2 & V2)
 	return(vResult);
 }
 
-__forceinline float SMVector2Length(const float2 & V)
+XINLINE float SMVector2Length(const float2 & V)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq.mmv = _mm_mul_ps(V, V);
@@ -755,7 +758,7 @@ __forceinline float SMVector2Length(const float2 & V)
 	return(vLengthSq.x);
 }
 
-__forceinline float2 SMVector2Normalize(const float2 & V)
+XINLINE float2 SMVector2Normalize(const float2 & V)
 {
 	static const SMVECTORI32 maskInf = {0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000};
 	static const SMVECTORI32 maskNaN = {0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000};
@@ -791,7 +794,7 @@ __forceinline float2 SMVector2Normalize(const float2 & V)
 
 
 
-__forceinline SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
+XINLINE SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
 {
 	SMVECTOR vDot;
 	vDot.mmv = _mm_mul_ps(V1, V2);
@@ -810,18 +813,18 @@ __forceinline SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
 	return(vDot);
 }
 
-__forceinline float SMVector3Dot(const float3 & V1, const float3 & V2)
+XINLINE float SMVector3Dot(const float3 & V1, const float3 & V2)
 {
 	return(SMVector3DotV(V1, V2).x);
 }
 
-__forceinline float SMVector3Dot(const float3 & V1)
+XINLINE float SMVector3Dot(const float3 & V1)
 {
 	return(SMVector3DotV(V1, V1).x);
 }
 
 
-__forceinline float3 SMVector3Cross(const float3 & V1, const float3 & V2)
+XINLINE float3 SMVector3Cross(const float3 & V1, const float3 & V2)
 {
 	static const SMVECTORI32 mask = {(int)0xFFFFFFFF, (int)0xFFFFFFFF, (int)0xFFFFFFFF, 0x00000000};
 	SMVECTOR vTemp1;
@@ -845,7 +848,7 @@ __forceinline float3 SMVector3Cross(const float3 & V1, const float3 & V2)
 	return(vResult);
 }
 
-__forceinline float SMVector3Length(const float3 & V)
+XINLINE float SMVector3Length(const float3 & V)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq.mmv = _mm_mul_ps(V, V);
@@ -865,12 +868,12 @@ __forceinline float SMVector3Length(const float3 & V)
 	return(vLengthSq.x);
 }
 
-__forceinline float SMVector3Distance(const float3 & V1,const float3 & V2)
+XINLINE float SMVector3Distance(const float3 & V1,const float3 & V2)
 {
 	return SMVector3Length(V1-V2);
 }
 
-__forceinline float3 SMVector3Normalize(const float3 & V)
+XINLINE float3 SMVector3Normalize(const float3 & V)
 {
 	static const SMVECTORI32 maskInf = {0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000};
 	static const SMVECTORI32 maskNaN = {0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000};
@@ -904,7 +907,7 @@ __forceinline float3 SMVector3Normalize(const float3 & V)
 	return vResult;
 }
 
-__forceinline float3 SMVector3Reflect(const float3 & V, const float3 & Normal)
+XINLINE float3 SMVector3Reflect(const float3 & V, const float3 & Normal)
 {
 	float fDot = SMVector3Dot(V, Normal);
 	float3 Result = float4(fDot, fDot, fDot, fDot);
@@ -914,7 +917,7 @@ __forceinline float3 SMVector3Reflect(const float3 & V, const float3 & Normal)
 	return(Result);
 }
 
-__forceinline float3 SMVector3RefractV(const float3 & V, const float3 & Normal, const SMVECTOR & RefractionIndex)
+XINLINE float3 SMVector3RefractV(const float3 & V, const float3 & Normal, const SMVECTOR & RefractionIndex)
 {
 	float fDotN = SMVector3Dot(V, Normal);
 	SMVECTOR IDotN = float4(fDotN, fDotN, fDotN, fDotN);
@@ -945,14 +948,14 @@ __forceinline float3 SMVector3RefractV(const float3 & V, const float3 & Normal, 
 	return(vResult);
 }
 
-__forceinline float3 SMVector3Refract(const float3 & V, const float3 & Normal, float RefractionIndex)
+XINLINE float3 SMVector3Refract(const float3 & V, const float3 & Normal, float RefractionIndex)
 {
 	SMVECTOR Index;
 	Index.mmv = _mm_set_ps1(RefractionIndex);
 	return(SMVector3RefractV(V, Normal, Index));
 }
 
-__forceinline float3 SMVector3Transform(const float3 & V, const SMMATRIX & M)
+XINLINE float3 SMVector3Transform(const float3 & V, const SMMATRIX & M)
 {
 	float3 vResult;
 	vResult.mmv = _mm_shuffle_ps(V, V, _MM_SHUFFLE(0, 0, 0, 0));
@@ -969,7 +972,7 @@ __forceinline float3 SMVector3Transform(const float3 & V, const SMMATRIX & M)
 }
 
 
-__forceinline SMVECTOR SMVector4DotV(const float4 & V1, const float4 & V2)
+XINLINE SMVECTOR SMVector4DotV(const float4 & V1, const float4 & V2)
 {
 	SMVECTOR vTemp2;
 	vTemp2.mmv = V2;
@@ -983,12 +986,12 @@ __forceinline SMVECTOR SMVector4DotV(const float4 & V1, const float4 & V2)
 	return(vTemp);
 }
 
-__forceinline float SMVector4Dot(const float4 & V1, const float4 & V2)
+XINLINE float SMVector4Dot(const float4 & V1, const float4 & V2)
 {
 	return(SMVector4DotV(V1, V2).x);
 }
 
-__forceinline float4 SMVector4Cross(const float4 & V1, const float4 & V2, const float4 & V3)
+XINLINE float4 SMVector4Cross(const float4 & V1, const float4 & V2, const float4 & V3)
 {
 	// V2zwyz * V3wzwy
 	SMVECTOR vResult;
@@ -1038,7 +1041,7 @@ __forceinline float4 SMVector4Cross(const float4 & V1, const float4 & V2, const 
 	return(vResult);
 }
 
-__forceinline float SMVector4Length(const float4 & V)
+XINLINE float SMVector4Length(const float4 & V)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq.mmv = _mm_mul_ps(V, V);
@@ -1058,7 +1061,7 @@ __forceinline float SMVector4Length(const float4 & V)
 	return(vLengthSq.x);
 }
 
-__forceinline float4 SMVector4Normalize(const float4 & V)
+XINLINE float4 SMVector4Normalize(const float4 & V)
 {
 	static const SMVECTORI32 maskInf = {0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000};
 	static const SMVECTORI32 maskNaN = {0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000};
@@ -1101,7 +1104,7 @@ __forceinline float4 SMVector4Normalize(const float4 & V)
 	return(vResult);
 }
 
-__forceinline float4 SMVector4Reflect(const float4 & V, const float4 & Normal)
+XINLINE float4 SMVector4Reflect(const float4 & V, const float4 & Normal)
 {
 	float fDot = SMVector4Dot(V, Normal);
 	float4 Result = float4(fDot, fDot, fDot, fDot);
@@ -1111,7 +1114,7 @@ __forceinline float4 SMVector4Reflect(const float4 & V, const float4 & Normal)
 	return(Result);
 }
 
-__forceinline float4 SMVector4RefractV(const float4 & V, const float4 & Normal, const SMVECTOR & RefractionIndex)
+XINLINE float4 SMVector4RefractV(const float4 & V, const float4 & Normal, const SMVECTOR & RefractionIndex)
 {
 	float fDot = SMVector4Dot(V, Normal);
 	float4 IDotN = float4(fDot, fDot, fDot, fDot);
@@ -1145,14 +1148,14 @@ __forceinline float4 SMVector4RefractV(const float4 & V, const float4 & Normal, 
 	return(vResult);
 }
 
-__forceinline float4 SMVector4Refract(const float4 & V, const float4 & Normal, float RefractionIndex)
+XINLINE float4 SMVector4Refract(const float4 & V, const float4 & Normal, float RefractionIndex)
 {
 	SMVECTOR Index;
 	Index.mmv = _mm_set_ps1(RefractionIndex);
 	return(SMVector4RefractV(V, Normal, Index));
 }
 
-__forceinline float4 SMVector4Transform(const float4 & V, const SMMATRIX & M)
+XINLINE float4 SMVector4Transform(const float4 & V, const SMMATRIX & M)
 {
 	SMVECTOR vTempX;
 	vTempX.mmv = _mm_shuffle_ps(V, V, _MM_SHUFFLE(0, 0, 0, 0));
@@ -1176,7 +1179,7 @@ __forceinline float4 SMVector4Transform(const float4 & V, const SMMATRIX & M)
 
 
 
-__forceinline SMMATRIX SMMatrixTranspose(const SMMATRIX & M)
+XINLINE SMMATRIX SMMatrixTranspose(const SMMATRIX & M)
 {
 	// x.x,x.y,y.x,y.y
 	SMVECTOR vTemp1;
@@ -1203,7 +1206,7 @@ __forceinline SMMATRIX SMMatrixTranspose(const SMMATRIX & M)
 	return(mResult);
 }
 
-__forceinline SMMATRIX SMMatrixMultiply(const SMMATRIX & M1, const SMMATRIX & M2)
+XINLINE SMMATRIX SMMatrixMultiply(const SMMATRIX & M1, const SMMATRIX & M2)
 {
 	SMMATRIX mResult;
 	// Use vW to hold the original row
@@ -1270,26 +1273,26 @@ __forceinline SMMATRIX SMMatrixMultiply(const SMMATRIX & M1, const SMMATRIX & M2
 	return(mResult);
 }
 
-__forceinline SMMATRIX SMMatrixIdentity()
+XINLINE SMMATRIX SMMatrixIdentity()
 {
 	return(SMMATRIX());
 }
 
-__forceinline SMMATRIX SMMatrixTranslation(float x, float y, float z)
+XINLINE SMMATRIX SMMatrixTranslation(float x, float y, float z)
 {
 	SMMATRIX M;
 	M.r[3] = float4(x, y, z, 1.0f);
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixTranslation(const float3 & V)
+XINLINE SMMATRIX SMMatrixTranslation(const float3 & V)
 {
 	SMMATRIX M;
 	M.r[3] = float4(V, 1.0f);
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixScaling(float x, float y, float z)
+XINLINE SMMATRIX SMMatrixScaling(float x, float y, float z)
 {
 	SMMATRIX M;
 	M.r[0] = float4(x, 0.0f, 0.0f, 0.0f);
@@ -1298,23 +1301,23 @@ __forceinline SMMATRIX SMMatrixScaling(float x, float y, float z)
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixScaling(const float3 & V)
+XINLINE SMMATRIX SMMatrixScaling(const float3 & V)
 {
 	return(SMMatrixScaling(V.x, V.y, V.z));
 }
 
-__forceinline SMMATRIX & SMMATRIX::operator *= (const SMMATRIX & M)
+XINLINE SMMATRIX & SMMATRIX::operator *= (const SMMATRIX & M)
 {
 	*this = SMMatrixMultiply(*this, M);
 	return(*this);
 }
 
-__forceinline SMMATRIX SMMATRIX::operator*(const SMMATRIX & M) const
+XINLINE SMMATRIX SMMATRIX::operator*(const SMMATRIX & M) const
 {
 	return(SMMatrixMultiply(*this, M));
 }
 
-__forceinline SMMATRIX SMMatrixRotationX(float Angle)
+XINLINE SMMATRIX SMMatrixRotationX(float Angle)
 {
 	float SinAngle = sinf(Angle);
 	float CosAngle = cosf(Angle);
@@ -1335,7 +1338,7 @@ __forceinline SMMATRIX SMMatrixRotationX(float Angle)
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixRotationY(float Angle)
+XINLINE SMMATRIX SMMatrixRotationY(float Angle)
 {
 	float SinAngle = sinf(Angle);
 	float CosAngle = cosf(Angle);
@@ -1356,7 +1359,7 @@ __forceinline SMMATRIX SMMatrixRotationY(float Angle)
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixRotationZ(float Angle)
+XINLINE SMMATRIX SMMatrixRotationZ(float Angle)
 {
 	float SinAngle = sinf(Angle);
 	float CosAngle = cosf(Angle);
@@ -1377,7 +1380,7 @@ __forceinline SMMATRIX SMMatrixRotationZ(float Angle)
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixRotationNormal(const float3 & NormalAxis, float Angle)
+XINLINE SMMATRIX SMMatrixRotationNormal(const float3 & NormalAxis, float Angle)
 {
 	SMVECTOR N0, N1;
 	SMVECTOR V0, V1, V2;
@@ -1425,13 +1428,13 @@ __forceinline SMMATRIX SMMatrixRotationNormal(const float3 & NormalAxis, float A
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixRotationAxis(const float3 & Axis, float Angle)
+XINLINE SMMATRIX SMMatrixRotationAxis(const float3 & Axis, float Angle)
 {
 	float3 normal = SMVector3Normalize(Axis);
 	return(SMMatrixRotationNormal(normal, Angle));
 }
 
-__forceinline SMMATRIX SMMatrixLookToLH(const float3 & EyePosition, const float3 & EyeDirection, const float3 & UpDirection)
+XINLINE SMMATRIX SMMatrixLookToLH(const float3 & EyePosition, const float3 & EyeDirection, const float3 & UpDirection)
 {
 	static const SMVECTORI32 mask3 = {(int)0xFFFFFFFF, (int)0xFFFFFFFF, (int)0xFFFFFFFF, 0x00000000};
 	static const SMVECTORI32 maskW = {0x00000000, 0x00000000, 0x00000000, (int)0xFFFFFFFF};
@@ -1461,12 +1464,12 @@ __forceinline SMMATRIX SMMatrixLookToLH(const float3 & EyePosition, const float3
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixLookAtLH(const float3 & EyePosition, const float3 & FocusPosition, const float3 & UpDirection)
+XINLINE SMMATRIX SMMatrixLookAtLH(const float3 & EyePosition, const float3 & FocusPosition, const float3 & UpDirection)
 {
 	return(SMMatrixLookToLH(EyePosition, FocusPosition - EyePosition, UpDirection));
 }
 
-__forceinline SMMATRIX SMMatrixPerspectiveLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
+XINLINE SMMATRIX SMMatrixPerspectiveLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
 {
 	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
@@ -1503,7 +1506,7 @@ __forceinline SMMATRIX SMMatrixPerspectiveLH(float ViewWidth, float ViewHeight, 
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixPerspectiveFovLH(float FovAngleY, float AspectRatio, float NearZ, float FarZ)
+XINLINE SMMATRIX SMMatrixPerspectiveFovLH(float FovAngleY, float AspectRatio, float NearZ, float FarZ)
 {
 	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
@@ -1542,7 +1545,7 @@ __forceinline SMMATRIX SMMatrixPerspectiveFovLH(float FovAngleY, float AspectRat
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixOrthographicLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
+XINLINE SMMATRIX SMMatrixOrthographicLH(float ViewWidth, float ViewHeight, float NearZ, float FarZ)
 {
 	SMVECTORI32 maskY = {0x00000000, (int)0xFFFFFFFF, 0x00000000, 0x00000000};
 	SMMATRIX M;
@@ -1577,7 +1580,7 @@ __forceinline SMMATRIX SMMatrixOrthographicLH(float ViewWidth, float ViewHeight,
 	return(M);
 }
 
-__forceinline SMMATRIX SMMatrixInverse(float * pDeterminant, const SMMATRIX & M)
+XINLINE SMMATRIX SMMatrixInverse(float * pDeterminant, const SMMATRIX & M)
 {
 	SMMATRIX MT = SMMatrixTranspose(M);
 	SMVECTOR V00;
@@ -1716,7 +1719,7 @@ __forceinline SMMATRIX SMMatrixInverse(float * pDeterminant, const SMMATRIX & M)
 	return(mResult);
 }
 
-__forceinline float SMMatrixDeterminant(const SMMATRIX &M)
+XINLINE float SMMatrixDeterminant(const SMMATRIX &M)
 {
 	static const float4 vSign(1.0f, -1.0f, 1.0f, -1.0f);
 
@@ -1775,14 +1778,14 @@ __forceinline float SMMatrixDeterminant(const SMMATRIX &M)
 	return(SMVector4Dot(S, R));
 }
 
-__forceinline float SMMatrix3x3Determinant(const SMMATRIX & M)
+XINLINE float SMMatrix3x3Determinant(const SMMATRIX & M)
 {
 	return(M._11 * (M._22 * M._33 - M._32 * M._23)
 		- M._12 * (M._21 * M._33 - M._31 * M._23)
 		+ M._13 * (M._21 * M._32 - M._31 * M._22));
 }
 
-__forceinline bool SMSoLE3x3Solve(const SMMATRIX &mCoefficientsConstants, float3 *pOut)
+XINLINE bool SMSoLE3x3Solve(const SMMATRIX &mCoefficientsConstants, float3 *pOut)
 {
 	SMMATRIX mTemp = mCoefficientsConstants;
 	for(int j = 0; j < 3; ++j)
@@ -1837,7 +1840,7 @@ __forceinline bool SMSoLE3x3Solve(const SMMATRIX &mCoefficientsConstants, float3
 	return(true);
 }
 
-__forceinline float3 SMTriangleCircumcenter3(const float3 &vA, const float3 &vB, const float3 &vC)
+XINLINE float3 SMTriangleCircumcenter3(const float3 &vA, const float3 &vB, const float3 &vC)
 {
 	float3 D = (vA + vC) * 0.5f;
 	float3 E = (vA + vB) * 0.5f;
@@ -1860,22 +1863,22 @@ __forceinline float3 SMTriangleCircumcenter3(const float3 &vA, const float3 &vB,
 }
 
 
-__forceinline float3 operator*(const float3 & V, const SMMATRIX & M)
+XINLINE float3 operator*(const float3 & V, const SMMATRIX & M)
 {
 	return(SMVector3Transform(V, M));
 }
 
-__forceinline float3 operator*(const SMMATRIX & M, const float3 & V)
+XINLINE float3 operator*(const SMMATRIX & M, const float3 & V)
 {
 	return(SMVector3Transform(V, M));
 }
 
-__forceinline float4 operator*(const float4 & V, const SMMATRIX & M)
+XINLINE float4 operator*(const float4 & V, const SMMATRIX & M)
 {
 	return(SMVector4Transform(V, M));
 }
 
-__forceinline float4 operator*(const SMMATRIX & M, const float4 & V)
+XINLINE float4 operator*(const SMMATRIX & M, const float4 & V)
 {
 	return(SMVector4Transform(V, M));
 }
@@ -2040,12 +2043,12 @@ public:
 		}
 	}
 };
-__forceinline bool operator==(const SMQuaternion & q1, const SMQuaternion & q2)
+XINLINE bool operator==(const SMQuaternion & q1, const SMQuaternion & q2)
 {
 	return(fabs(q1.x - q2.x) < FLT_EPSILON && fabs(q1.y - q2.y) < FLT_EPSILON && fabs(q1.z - q2.z) < FLT_EPSILON && fabs(q1.w - q2.w) < FLT_EPSILON);
 }
 
-__forceinline SMQuaternion operator*(const SMQuaternion & q1, const SMQuaternion & q2)
+XINLINE SMQuaternion operator*(const SMQuaternion & q1, const SMQuaternion & q2)
 {
 	float A, B, C, D, E, F, G, H;
 
@@ -2060,7 +2063,7 @@ __forceinline SMQuaternion operator*(const SMQuaternion & q1, const SMQuaternion
 	return(SMQuaternion(A - (E + F + G + H) * 0.5f, -C + (E - F + G - H) * 0.5f, -D + (E - F - G + H) * 0.5f, B + (-E - F + G + H) * 0.5f).Normalize());
 }
 
-__forceinline float3 operator *(const SMQuaternion & q, const float3 & p)
+XINLINE float3 operator *(const SMQuaternion & q, const float3 & p)
 {
 	float xxzz = q.x*q.x - q.z*q.z;
 	float wwyy = q.w*q.w - q.y*q.y;
@@ -2098,18 +2101,18 @@ __forceinline float3 operator *(const SMQuaternion & q, const float3 & p)
 	return(r);
 }
 
-__forceinline SMQuaternion SMQuaternion::Normalize()
+XINLINE SMQuaternion SMQuaternion::Normalize()
 {
 	float l = Length();
 	return(SMQuaternion(x / l, y / l, z / l, w / l));
 }
 
-__forceinline float SMQuaternion::Length()
+XINLINE float SMQuaternion::Length()
 {
 	return(sqrtf(x * x + y * y + z * z + w * w));
 }
 
-__forceinline SMQuaternion SMQuaternion::Inverse()
+XINLINE SMQuaternion SMQuaternion::Inverse()
 {
 	float length;
 	length = 1.0f / (x * x + y * y + z * z + w * w);
@@ -2120,7 +2123,7 @@ __forceinline SMQuaternion SMQuaternion::Inverse()
 	return(SMQuaternion(x * -length, y * -length, z * -length, w * length));
 }
 
-__forceinline SMQuaternion SMQuaternion::Renormalize()
+XINLINE SMQuaternion SMQuaternion::Renormalize()
 {
 	double len = 1 - x * x - y * y - z * z;
 	if(len < 0.0001f)
@@ -2133,12 +2136,12 @@ __forceinline SMQuaternion SMQuaternion::Renormalize()
 	}
 }
 
-__forceinline SMQuaternion SMQuaternion::Conjugate() const
+XINLINE SMQuaternion SMQuaternion::Conjugate() const
 {
 	return(SMQuaternion(-x, -y, -z, w));
 }
 
-__forceinline SMMATRIX SMQuaternion::GetMatrix() const
+XINLINE SMMATRIX SMQuaternion::GetMatrix() const
 {
 	SMMATRIX m;
 	float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
@@ -2159,7 +2162,7 @@ __forceinline SMMATRIX SMQuaternion::GetMatrix() const
 	return(m);
 }
 
-__forceinline SMQuaternion SMquaternionSlerp(const SMQuaternion &q, const SMQuaternion &p, float t)
+XINLINE SMQuaternion SMquaternionSlerp(const SMQuaternion &q, const SMQuaternion &p, float t)
 {
 	float p1[4];
 	double omega, cosom, sinom, scale0, scale1;
@@ -2196,12 +2199,12 @@ __forceinline SMQuaternion SMquaternionSlerp(const SMQuaternion &q, const SMQuat
 	return(SMQuaternion((float)(scale0 * q.x + scale1 * p1[0]), (float)(scale0 * q.y + scale1 * p1[1]), (float)(scale0 * q.z + scale1 * p1[2]), (float)(scale0 * q.w + scale1 * p1[3])));
 }
 
-__forceinline static float InnerProduct(const SMQuaternion & q1, const SMQuaternion & q2)
+XINLINE static float InnerProduct(const SMQuaternion & q1, const SMQuaternion & q2)
 {
 	return(q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w);
 }
 
-__forceinline float SM_FISQRT(float number)
+XINLINE float SM_FISQRT(float number)
 {
 	long i;
 	float x2, y;
@@ -2218,12 +2221,12 @@ __forceinline float SM_FISQRT(float number)
 	return(y);
 }
 
-__forceinline float SM_FSQRT(float number)
+XINLINE float SM_FSQRT(float number)
 {
 	return(1.0f / SM_FISQRT(number));
 }
 
-__forceinline float SMVector3FastLength(const float3 & V)
+XINLINE float SMVector3FastLength(const float3 & V)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq.mmv = _mm_mul_ps(V, V);
@@ -2243,7 +2246,7 @@ __forceinline float SMVector3FastLength(const float3 & V)
 }
 
 #if 0
-__forceinline float SMVector3NonSqrtLength(const float3 & V)
+XINLINE float SMVector3NonSqrtLength(const float3 & V)
 {
 	SMVECTOR vLengthSq;
 	vLengthSq.mmv = _mm_mul_ps(V, V);
@@ -2275,13 +2278,13 @@ _forceinline float Clamp01(const float &a)
 	}
 	return(a);
 }
-__forceinline float3 Clamp01(const float3 &a)
+XINLINE float3 Clamp01(const float3 &a)
 {
 	float3 v(Clamp01(a.x), Clamp01(a.y), Clamp01(a.z));
 	return(v);
 }
 
-__forceinline float SMVector3Length2(const float3 & V)
+XINLINE float SMVector3Length2(const float3 & V)
 {
 
 	SMVECTOR vLengthSq;
@@ -2301,7 +2304,7 @@ __forceinline float SMVector3Length2(const float3 & V)
 	return(vLengthSq.x);
 }
 
-__forceinline float3 SMMatrixToEuler(const SMMATRIX & mat)
+XINLINE float3 SMMatrixToEuler(const SMMATRIX & mat)
 {
 	float RADIANS = 180.0f / SM_PI;
 	float D;
@@ -2339,12 +2342,12 @@ __forceinline float3 SMMatrixToEuler(const SMMATRIX & mat)
 	return(res);
 }
 
-__forceinline float3 SMEulerToVec(const float3 & in, const float3 & basedir)
+XINLINE float3 SMEulerToVec(const float3 & in, const float3 & basedir)
 {
 	return(SMMatrixRotationX(in.x) * SMMatrixRotationY(in.y) * SMMatrixRotationZ(in.z) * basedir);
 }
 
-__forceinline float SMCrossLines(const float3 & pos1, const float3 & dir1,
+XINLINE float SMCrossLines(const float3 & pos1, const float3 & dir1,
 	const float3 & pos2, const float3 & dir2,
 	float3 * pH1 = NULL, float3 * pH2 = NULL)
 {
@@ -2378,7 +2381,7 @@ __forceinline float SMCrossLines(const float3 & pos1, const float3 & dir1,
 
 //##########################################################################
 
-__declspec(align(16)) struct SMPLANE: public float4
+XALIGNED(16) struct SMPLANE: public float4
 {
 	SMPLANE():float4(0.0f, 1.0f, 0.0f, 0.0f)
 	{
@@ -2467,7 +2470,7 @@ __declspec(align(16)) struct SMPLANE: public float4
 	//#endif
 };
 
-__forceinline SMMATRIX SMMatrixReflect(const SMPLANE &_plane)
+XINLINE SMMATRIX SMMatrixReflect(const SMPLANE &_plane)
 {
 	float4 plane = SMVector4Normalize(_plane);
 	float4 m2plane = -2.0f * float4((float3)plane, 0.0f);
@@ -2481,7 +2484,7 @@ __forceinline SMMATRIX SMMatrixReflect(const SMPLANE &_plane)
 
 #define FLOAT_INF ((float)INFINITY)
 
-__forceinline SMPLANE SMPlaneTransform(const SMPLANE &P, const SMMATRIX &M)
+XINLINE SMPLANE SMPlaneTransform(const SMPLANE &P, const SMMATRIX &M)
 {
 	float fDeterminant;
 	SMMATRIX m = SMMatrixTranspose(SMMatrixInverse(&fDeterminant, M));
@@ -2493,7 +2496,7 @@ __forceinline SMPLANE SMPlaneTransform(const SMPLANE &P, const SMMATRIX &M)
 		);
 }
 
-__forceinline SMPLANE SMPlaneTransformTI(const SMPLANE &P, const SMMATRIX &m)
+XINLINE SMPLANE SMPlaneTransformTI(const SMPLANE &P, const SMMATRIX &m)
 {
 	return(
 		float4(P.x) * m.r[0] +
@@ -2503,13 +2506,13 @@ __forceinline SMPLANE SMPlaneTransformTI(const SMPLANE &P, const SMMATRIX &m)
 		);
 }
 
-__forceinline SMPLANE SMPlaneNormalize(const SMPLANE &P)
+XINLINE SMPLANE SMPlaneNormalize(const SMPLANE &P)
 {
 	float fInvLen = 1.0f / SMVector3Length(P);
 	return(P * fInvLen);
 }
 
-__forceinline bool SMVector4EqualEpsilon(const float4 &A, const float4 &B, float fEpsilon)
+XINLINE bool SMVector4EqualEpsilon(const float4 &A, const float4 &B, float fEpsilon)
 {
 	float4 vDelta = A - B;
 	SMVECTOR vTemp = SMVectorAbs(vDelta);
@@ -2517,14 +2520,14 @@ __forceinline bool SMVector4EqualEpsilon(const float4 &A, const float4 &B, float
 	return((_mm_movemask_ps(vTemp) == 0xf) != 0);
 }
 
-__forceinline bool SMPlaneEqualEpsilon(const SMPLANE &A, const SMPLANE &B, float fEpsilon)
+XINLINE bool SMPlaneEqualEpsilon(const SMPLANE &A, const SMPLANE &B, float fEpsilon)
 {
 	return(SMVector4EqualEpsilon(SMPlaneNormalize(A), SMPlaneNormalize(B), fEpsilon));
 }
 
 //##########################################################################
 
-__declspec(align(16)) struct SMAABB
+XALIGNED(16) struct SMAABB
 {
 	SMAABB() = default;
 	SMAABB(const float3 &vMin_, const float3 &vMax_):
@@ -2536,34 +2539,34 @@ __declspec(align(16)) struct SMAABB
 	float3 vMax;
 };
 
-__forceinline SMAABB operator+(const SMAABB &aabb, const SMVECTOR &V)
+XINLINE SMAABB operator+(const SMAABB &aabb, const SMVECTOR &V)
 {
 	return(SMAABB(aabb.vMin + V, aabb.vMax + V));
 };
-__forceinline SMAABB operator+(const SMVECTOR &V, const SMAABB &aabb)
+XINLINE SMAABB operator+(const SMVECTOR &V, const SMAABB &aabb)
 {
 	return(aabb + V);
 };
 
-__forceinline SMAABB operator-(const SMAABB &aabb, const SMVECTOR &V)
+XINLINE SMAABB operator-(const SMAABB &aabb, const SMVECTOR &V)
 {
 	return(SMAABB(aabb.vMin - V, aabb.vMax - V));
 };
-__forceinline SMAABB operator-(const SMVECTOR &V, const SMAABB &aabb)
+XINLINE SMAABB operator-(const SMVECTOR &V, const SMAABB &aabb)
 {
 	return(aabb - V);
 };
 
-__forceinline SMAABB operator*(const SMAABB &aabb, float f)
+XINLINE SMAABB operator*(const SMAABB &aabb, float f)
 {
 	return(SMAABB(aabb.vMin * f, aabb.vMax * f));
 };
-__forceinline SMAABB operator/(const SMAABB &aabb, float f)
+XINLINE SMAABB operator/(const SMAABB &aabb, float f)
 {
 	return(SMAABB(aabb.vMin / f, aabb.vMax / f));
 };
 
-__forceinline float SMDistancePointAABB(const float3 &vPoint, const float3 &vMin, const float3 &vMax)
+XINLINE float SMDistancePointAABB(const float3 &vPoint, const float3 &vMin, const float3 &vMax)
 {
 	bool bXlo = vPoint.x < vMin.x;
 	bool bXhi = vPoint.x > vMax.x;
@@ -2747,12 +2750,12 @@ __forceinline float SMDistancePointAABB(const float3 &vPoint, const float3 &vMin
 	}
 
 }
-__forceinline float SMDistancePointAABB(const float3 &vPoint, const SMAABB &aabb)
+XINLINE float SMDistancePointAABB(const float3 &vPoint, const SMAABB &aabb)
 {
 	return(SMDistancePointAABB(vPoint, aabb.vMin, aabb.vMax));
 }
 
-__forceinline float SMAABBVolume(const SMAABB &aabb)
+XINLINE float SMAABBVolume(const SMAABB &aabb)
 {
 	SMVECTOR vDims;
 	
@@ -2770,12 +2773,12 @@ __forceinline float SMAABBVolume(const SMAABB &aabb)
 	return(vDims.x);
 }
 
-__forceinline SMAABB SMAABBConvex(const SMAABB &A, const SMAABB &B)
+XINLINE SMAABB SMAABBConvex(const SMAABB &A, const SMAABB &B)
 {
 	return(SMAABB(SMVectorMin(A.vMin, B.vMin), SMVectorMax(A.vMax, B.vMax)));
 }
 
-__forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, const float3 &vMax)
+XINLINE bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, const float3 &vMax)
 {
 	int i = 0;
 	i += (SMVector3Dot(P, vMin) > -P.w) ? 1 : 0;
@@ -2788,19 +2791,19 @@ __forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, co
 	i += (SMVector3Dot(P, vMax) > -P.w) ? 1 : 0;
 	return(i > 0 && i < 8);
 }
-__forceinline bool SMPlaneIntersectAABB(const SMPLANE &P, const SMAABB &aabb)
+XINLINE bool SMPlaneIntersectAABB(const SMPLANE &P, const SMAABB &aabb)
 {
 	return(SMPlaneIntersectAABB(P, aabb.vMin, aabb.vMax));
 }
 
-__forceinline bool SMAABBIntersectAABB(const float3 &vMinA, const float3 &vMaxA, const float3 &vMinB, const float3 &vMaxB)
+XINLINE bool SMAABBIntersectAABB(const float3 &vMinA, const float3 &vMaxA, const float3 &vMinB, const float3 &vMaxB)
 {
 	if(vMaxA.x < vMinB.x || vMinA.x > vMaxB.x) return(false);
 	if(vMaxA.y < vMinB.y || vMinA.y > vMaxB.y) return(false);
 	if(vMaxA.z < vMinB.z || vMinA.z > vMaxB.z) return(false);
 	return(true);
 }
-__forceinline bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB)
+XINLINE bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB)
 {
 	return(SMAABBIntersectAABB(aabbA.vMin, aabbA.vMax, aabbB.vMin, aabbB.vMax));
 }
@@ -2808,12 +2811,12 @@ __forceinline bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB)
 //##########################################################################
 
 //! возвращает нормаль треугольника
-__forceinline float3 TriGetNormal(const float4 &vPointA, const float4 &vPointB, const float4 &vPointC)
+XINLINE float3 TriGetNormal(const float4 &vPointA, const float4 &vPointB, const float4 &vPointC)
 {
 	return SMVector3Normalize(SMVector3Cross(vPointC - vPointA, vPointB - vPointA));
 }
 
-__forceinline float SMBoxRayIntersection(const float3 &vBoxMin, const float3 &vBoxMax, const float3 &vRayOrigin, const float3 &vRayDir)
+XINLINE float SMBoxRayIntersection(const float3 &vBoxMin, const float3 &vBoxMax, const float3 &vRayOrigin, const float3 &vRayDir)
 {
 	if (fabsf(vRayDir.x) <= FLT_EPSILON || fabsf(vRayDir.y) <= FLT_EPSILON || fabsf(vRayDir.z) <= FLT_EPSILON)
 	{
