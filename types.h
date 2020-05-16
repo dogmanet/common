@@ -157,6 +157,9 @@ public:
 	virtual UINT XMETHODCALLTYPE getVersion() = 0;
 
 	virtual void XMETHODCALLTYPE getInternalData(const XGUID *pGUID, void **ppOut) = 0;
+
+protected:
+	virtual ~IXUnknown() = default;
 };
 
 #ifdef __cplusplus
@@ -164,14 +167,6 @@ public:
 template <class T>                                                                       \
 class name: public __VA_ARGS__ T                                                         \
 {                                                                                        \
-protected:                                                                               \
-	name<T>()                                                                            \
-	{                                                                                    \
-		m_uRefCount.store(1);                                                            \
-	}                                                                                    \
-	virtual ~name<T>() = default;                                                        \
-	                                                                                     \
-	std::atomic_uint m_uRefCount;                                                        \
 public:                                                                                  \
 	void XMETHODCALLTYPE AddRef() override                                               \
 	{                                                                                    \
@@ -179,10 +174,9 @@ public:                                                                         
 	}                                                                                    \
 	void XMETHODCALLTYPE Release() override                                              \
 	{                                                                                    \
-		--m_uRefCount;                                                                   \
-		if(!m_uRefCount)                                                                 \
+		if(!--m_uRefCount)                                                               \
 		{                                                                                \
-			delete this;                                                                 \
+			FinalRelease();                                                              \
 		}                                                                                \
 	}                                                                                    \
 	                                                                                     \
@@ -195,6 +189,14 @@ public:                                                                         
 	{                                                                                    \
 		*ppOut = NULL;                                                                   \
 	}                                                                                    \
+protected:                                                                               \
+	name<T>()                                                                            \
+	{                                                                                    \
+		m_uRefCount.store(1);                                                            \
+	}                                                                                    \
+private:                                                                                 \
+	std::atomic_uint m_uRefCount;                                                        \
+	virtual void XMETHODCALLTYPE FinalRelease(){delete this;}                            \
 }
 
 IXUNKNOWN_IMPLEMENTATION(IXUnknownImplementation);
