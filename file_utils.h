@@ -15,10 +15,10 @@ See the license in LICENSE
 #include "array.h"
 
 //! существует ли файл
-bool FileExistsFile(const char *szPath);
+XDEPRECATED bool FileExistsFile(const char *szPath);
 
 //! существует ли директория
-bool FileExistsDir(const char *szPath);
+XDEPRECATED bool FileExistsDir(const char *szPath);
 
 //! существует ли путь (файл или директория)
 #define FileExistsPath(szPath)(FileExistsFile(szPath) || FileExistsDir(szPath))
@@ -40,7 +40,7 @@ enum FILE_LIST_TYPE
 szPath может быть не канонизирован и необязательно должен заканчиваться слэшем, 
 szPath уже может содержать фильтр (к примеру C:/*), но если его нет, тогда функция подставит сама
 */
-Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type);
+XDEPRECATED Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type);
 
 //! возвращает массив файлов в директории szPath
 #define FileGetListFiles(szPath)(FileGetList(szPath, FILE_LIST_TYPE_FILES))
@@ -56,50 +56,50 @@ Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type);
 szPath не должен содержать фильтров, может быть не канонизирован и без последнего слэша, 
 szExt - расширение файла без точки
 */
-Array<String> FileGetListRec(const char *szPath, FILE_LIST_TYPE type, const char *szExt = 0);
+XDEPRECATED Array<String> FileGetListRec(const char *szPath, FILE_LIST_TYPE type, const char *szExt = 0);
 
 
-const char *FileBaseName(const char *szPath);
+XDEPRECATED const char *FileBaseName(const char *szPath);
 
-const char *FileDirName(char *szPath);
+XDEPRECATED const char *FileDirName(char *szPath);
 
 
 //! канонизация строки пути (приведение слэшей к единому виду), изменяет входящую строку szPath
-const char *FileCanonizePath(char *szPath);
+XDEPRECATED const char *FileCanonizePath(char *szPath);
 
 //! канонизация строки пути (приведение слэшей к единому виду), возвращает новую строку
-String FileCanonizePathS(const char *szPath);
+XDEPRECATED String FileCanonizePathS(const char *szPath);
 
 //! возвращает количество вложенности папки/файла
-int FileCountNesting(const char *szPath);
+XDEPRECATED int FileCountNesting(const char *szPath);
 
 //! возвращает путь на одно вложение меньше, то есть вырезает последний /
-String FileGetPrevDir(const char *szPath);
+XDEPRECATED String FileGetPrevDir(const char *szPath);
 
 //! есть ли в конце строки слэш?
-bool FileExistsEndSlash(const char *szPath);
+XDEPRECATED bool FileExistsEndSlash(const char *szPath);
 
 //! добавляет в конец строки слэш
-String FileAppendSlash(const char *szPath);
+XDEPRECATED String FileAppendSlash(const char *szPath);
 
 //! входит ли szSubPath в szPath
-bool FileExistsInPath(const char *szPath, const char *szSubPath);
+XDEPRECATED bool FileExistsInPath(const char *szPath, const char *szSubPath);
 
 //! установка файлу в строке szPath (путь) расширения szExt, если расширение уже было то будет заменено на новое
-String FileSetStrExt(const char *szPath, const char *szExt);
+XDEPRECATED String FileSetStrExt(const char *szPath, const char *szExt);
 
 //! сравнивает расширение файла в строке szPath с расширением szExt (без точки)
-bool FileStrIsExt(const char *szPath, const char *szExt);
+XDEPRECATED bool FileStrIsExt(const char *szPath, const char *szExt);
 
 
 //! создание директорий, в том числе и вложенных
-bool FileCreateDir(const char *szPath);
+XDEPRECATED bool FileCreateDir(const char *szPath);
 
 //! возвращает время последнего изменения файла
-time_t FileGetTimeLastModify(const char *szPath);
+XDEPRECATED time_t FileGetTimeLastModify(const char *szPath);
 
 //! возвращает размер файла в байтах
-int FileGetSizeFile(const char *szPath);
+XDEPRECATED int FileGetSizeFile(const char *szPath);
 
 
 #endif

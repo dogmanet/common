@@ -425,7 +425,7 @@ public:
 			return(!this->IsEnd);
 		}
 
-		Iterator operator++(int)
+		Iterator& operator++()
 		{
 			if(!this->CurNode && this->nodes.IsEmpty())
 			{
@@ -465,6 +465,11 @@ public:
 				this->CurNode = NULL;
 			}
 			return(*this);
+		}
+
+		Iterator operator++(int)
+		{
+			return(++(*this));
 		}
 	};
 	/*
@@ -615,7 +620,7 @@ public:
 
 	AssotiativeArray(const AssotiativeArray & a):RootNode(NULL), Size_(0), TmpNode(NULL)
 	{
-		for(typename AssotiativeArray<SX_KEYTYPE, SX_VALTYPE>::Iterator i = a.begin(); i; i++)
+		for(typename AssotiativeArray<SX_KEYTYPE, SX_VALTYPE>::Iterator i = a.begin(); i; ++i)
 		{
 			(*this)[*(i.first)] = *(i.second);
 		}

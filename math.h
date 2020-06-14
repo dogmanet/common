@@ -215,7 +215,8 @@ XALIGNED(16) struct SMVECTOR
 
 	bool operator==(const SMVECTOR & other)
 	{
-		return(mmv.m128_u64[0] == other.mmv.m128_u64[0] && mmv.m128_u64[1] == other.mmv.m128_u64[1]);
+		return(_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) == 0xF);
+		//return(mmv.m128_u64[0] == other.mmv.m128_u64[0] && mmv.m128_u64[1] == other.mmv.m128_u64[1]);
 	}
 };
 
@@ -300,6 +301,11 @@ XALIGNED(16) struct float2: public SMVECTOR
 		return(*this);
 	};
 
+	bool operator==(const float2 &other)
+	{
+		return((_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) & 0x3) == 0x3);
+	}
+
 #ifdef SM_D3D_CONVERSIONS
 	operator D3DXVECTOR2()
 	{
@@ -360,6 +366,11 @@ XALIGNED(16) struct float3: public SMVECTOR
 		mmv = V.mmv;
 		return(*this);
 	};
+
+	bool operator==(const float3 &other)
+	{
+		return((_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) & 0x7) == 0x7);
+	}
 
 #ifdef SM_D3D_CONVERSIONS
 	operator D3DXVECTOR3()
@@ -1891,7 +1902,7 @@ public:
 	float z;
 	float w;
 
-	SMQuaternion::SMQuaternion(const float3 & f)
+	explicit SMQuaternion::SMQuaternion(const float3 &f)
 	{
 		x = f.x;
 		y = f.y;
@@ -1899,7 +1910,7 @@ public:
 		w = Renormalize().w;
 	}
 
-	SMQuaternion::SMQuaternion(const float4 & f)
+	explicit SMQuaternion::SMQuaternion(const float4 &f)
 	{
 		x = f.x;
 		y = f.y;
@@ -1979,9 +1990,9 @@ public:
 
 	SMQuaternion Conjugate() const;
 
-	static float InnerProduct(const SMQuaternion & q1, const SMQuaternion & q2);
+	static float InnerProduct(const SMQuaternion &q1, const SMQuaternion &q2);
 
-	SMQuaternion(const float3 & v, float angle)
+	SMQuaternion(const float3 &v, float angle)
 	{
 		float3 axis = SMVector3Normalize(v);
 		float half_angle = angle * 0.5f;
@@ -2537,6 +2548,15 @@ XALIGNED(16) struct SMAABB
 
 	float3 vMin;
 	float3 vMax;
+
+	bool operator==(const SMAABB &other) const
+	{
+		return(vMin == other.vMin && vMax == other.vMax);
+	}
+	bool operator!=(const SMAABB &other) const
+	{
+		return(!(*this == other));
+	}
 };
 
 XINLINE SMAABB operator+(const SMAABB &aabb, const SMVECTOR &V)
@@ -2778,6 +2798,12 @@ XINLINE SMAABB SMAABBConvex(const SMAABB &A, const SMAABB &B)
 	return(SMAABB(SMVectorMin(A.vMin, B.vMin), SMVectorMax(A.vMax, B.vMax)));
 }
 
+XINLINE bool SMIsAABBInsideAABB(const SMAABB &inner, const SMAABB &outer)
+{
+	return((_mm_movemask_ps(_mm_cmpge_ps(inner.vMin.mmv, outer.vMin.mmv)) & 0x7) == 0x7
+		&& (_mm_movemask_ps(_mm_cmpge_ps(outer.vMax.mmv, inner.vMax.mmv)) & 0x7) == 0x7);
+}
+
 XINLINE bool SMPlaneIntersectAABB(const SMPLANE &P, const float3 &vMin, const float3 &vMax)
 {
 	int i = 0;
@@ -2803,9 +2829,14 @@ XINLINE bool SMAABBIntersectAABB(const float3 &vMinA, const float3 &vMaxA, const
 	if(vMaxA.z < vMinB.z || vMinA.z > vMaxB.z) return(false);
 	return(true);
 }
-XINLINE bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB)
+XINLINE bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB, SMAABB *pIntersection = NULL)
 {
-	return(SMAABBIntersectAABB(aabbA.vMin, aabbA.vMax, aabbB.vMin, aabbB.vMax));
+	bool result = SMAABBIntersectAABB(aabbA.vMin, aabbA.vMax, aabbB.vMin, aabbB.vMax);
+	if(result && pIntersection)
+	{
+		*pIntersection = SMAABB(SMVectorMax(aabbA.vMin, aabbB.vMin), SMVectorMin(aabbA.vMax, aabbB.vMax));
+	}
+	return(result);
 }
 
 //##########################################################################

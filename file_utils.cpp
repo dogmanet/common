@@ -6,7 +6,7 @@ See the license in LICENSE
 
 #include "file_utils.h"
 
-bool FileExistsFile(const char *szPath)
+XDEPRECATED bool FileExistsFile(const char *szPath)
 {
 	WIN32_FIND_DATA wfd;
 	HANDLE hFind = ::FindFirstFile(szPath, &wfd);
@@ -26,7 +26,7 @@ int FileGetSizeFile(const char *szPath)
 	return fi.st_size;
 }
 
-bool FileExistsDir(const char *szPath)
+XDEPRECATED bool FileExistsDir(const char *szPath)
 {
 	DWORD dwFileAttributes = GetFileAttributes(szPath);
 	if (dwFileAttributes == 0xFFFFFFFF)
@@ -34,7 +34,7 @@ bool FileExistsDir(const char *szPath)
 	return((dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 }
 
-Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type)
+XDEPRECATED Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type)
 {
 	Array<String> aStrings;
 	WIN32_FIND_DATA fd;
@@ -71,7 +71,7 @@ Array<String> FileGetList(const char *szPath, FILE_LIST_TYPE type)
 	return aStrings;
 }
 
-Array<String> FileGetListRec(const char *szPath, FILE_LIST_TYPE type, const char *szExt)
+XDEPRECATED Array<String> FileGetListRec(const char *szPath, FILE_LIST_TYPE type, const char *szExt)
 {
 	Array<String> aStrings;
 	Array<String> aQueue;
@@ -119,7 +119,7 @@ Array<String> FileGetListRec(const char *szPath, FILE_LIST_TYPE type, const char
 	return aStrings;
 }
 
-const char *FileBaseName(const char *szPath)
+XDEPRECATED const char *FileBaseName(const char *szPath)
 {
 	const char *szPos = szPath;
 	while (*szPath)
@@ -133,7 +133,7 @@ const char *FileBaseName(const char *szPath)
 	return(szPos);
 }
 
-const char *FileDirName(char *szPath)
+XDEPRECATED const char *FileDirName(char *szPath)
 {
 	char * pos = szPath, *ret = szPath;
 	while (*szPath)
@@ -148,7 +148,7 @@ const char *FileDirName(char *szPath)
 	return(ret);
 }
 
-const char *FileCanonizePath(char *szPath)
+XDEPRECATED const char *FileCanonizePath(char *szPath)
 {
 	char * ret = szPath;
 	while (*szPath)
@@ -162,7 +162,7 @@ const char *FileCanonizePath(char *szPath)
 	return(ret);
 }
 
-String FileCanonizePathS(const char *szPath)
+XDEPRECATED String FileCanonizePathS(const char *szPath)
 {
 	String sCanonizePath = szPath;
 	for (int i = 0, il = sCanonizePath.length(); i < il; ++i)
@@ -174,7 +174,7 @@ String FileCanonizePathS(const char *szPath)
 	return sCanonizePath;
 }
 
-int FileCountNesting(const char *szPath)
+XDEPRECATED int FileCountNesting(const char *szPath)
 {
 	int iCount = 0;
 
@@ -190,7 +190,7 @@ int FileCountNesting(const char *szPath)
 	return iCount;
 }
 
-String FileGetPrevDir(const char *szPath)
+XDEPRECATED String FileGetPrevDir(const char *szPath)
 {
 	int iPosDel = 0;
 
@@ -211,12 +211,12 @@ String FileGetPrevDir(const char *szPath)
 	return sStr;
 }
 
-bool FileExistsEndSlash(const char *szPath)
+XDEPRECATED bool FileExistsEndSlash(const char *szPath)
 {
 	return (strlen(szPath) > 0 && (szPath[strlen(szPath) - 1] == '\\' || szPath[strlen(szPath) - 1] == '/'));
 }
 
-String FileAppendSlash(const char *szPath)
+XDEPRECATED String FileAppendSlash(const char *szPath)
 {
 	String sNewPath = szPath;
 
@@ -226,7 +226,7 @@ String FileAppendSlash(const char *szPath)
 	return sNewPath;
 }
 
-bool FileExistsInPath(const char *szPath, const char *szSubPath)
+XDEPRECATED bool FileExistsInPath(const char *szPath, const char *szSubPath)
 {
 	String sPath = StrToLower(szPath);
 
@@ -247,7 +247,7 @@ bool FileExistsInPath(const char *szPath, const char *szSubPath)
 	return(strstr(sPath.c_str(), sSubPath.c_str()) != NULL);
 }
 
-bool FileCreateDir(const char *szPath)
+XDEPRECATED bool FileCreateDir(const char *szPath)
 {
 	if (!strstr(szPath, "\\") && !strstr(szPath, "/"))
 	{
@@ -272,7 +272,7 @@ bool FileCreateDir(const char *szPath)
 	return true;
 }
 
-time_t FileGetTimeLastModify(const char *szPath)
+XDEPRECATED time_t FileGetTimeLastModify(const char *szPath)
 {
 	HANDLE hFile = CreateFile(szPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 
@@ -300,7 +300,7 @@ time_t FileGetTimeLastModify(const char *szPath)
 	return tLastModify;
 }
 
-String FileSetStrExt(const char *szPath, const char *szExt)
+XDEPRECATED String FileSetStrExt(const char *szPath, const char *szExt)
 {
 	String sPath = szPath;
 
@@ -328,7 +328,7 @@ String FileSetStrExt(const char *szPath, const char *szExt)
 	return sPath;
 }
 
-bool FileStrIsExt(const char *szPath, const char *szExt)
+XDEPRECATED bool FileStrIsExt(const char *szPath, const char *szExt)
 {
 	if (!szPath || !szExt)
 		return false;

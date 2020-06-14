@@ -14,9 +14,11 @@ See the license in LICENSE
 #include <assert.h>
 #include <mutex>
 #include <atomic>
+#include "spinlock.h"
 
 using std::mutex;
 typedef std::unique_lock<std::mutex> ScopedLock;
+typedef std::unique_lock<SpinLock> ScopedSpinLock;
 
 
 typedef float float32_t;
@@ -89,24 +91,19 @@ typedef void* SXWINDOW;
 
 
 #if defined(_MSC_VER)
-#define XALIGNED(x) __declspec(align(x))
+#	define XALIGNED(x) __declspec(align(x))
+#	define XDEPRECATED __declspec(deprecated) 
+#	define XMETHODCALLTYPE __stdcall
+#	define XINLINE __forceinline
 #elif defined(__GNUC__)
-#define XALIGNED(x) __attribute__ ((aligned(x)))
+#	define XALIGNED(x) __attribute__ ((aligned(x)))
+#	define XDEPRECATED __attribute__((deprecated)) 
+//#	define XMETHODCALLTYPE __attribute__((stdcall))
+#	define XMETHODCALLTYPE
+#	define XINLINE inline __attribute__((always_inline))
 #else
-#error "unsupported compiler"
+#	error "unsupported compiler"
 #endif
-
-#ifdef _MSC_VER
-#define XMETHODCALLTYPE __stdcall
-#define XINLINE __forceinline
-#elif defined(__GNUC__)
-//#define XMETHODCALLTYPE __attribute__((stdcall))
-#define XMETHODCALLTYPE
-#define XINLINE inline __attribute__((always_inline))
-#else
-#error "unsupported compiler"
-#endif
-
 
 typedef struct _XGUID
 {

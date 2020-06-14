@@ -9,13 +9,16 @@
 template<typename T> class CConcurrentQueue
 {
 public:
-	CConcurrentQueue()
-	{
-	}
+	CConcurrentQueue() = default;
 
 	CConcurrentQueue(const CConcurrentQueue<T> &other)
 	{
 		m_queue = other.m_queue;
+	}
+
+	CConcurrentQueue(CConcurrentQueue<T> &&other)
+	{
+		m_queue.swap(other.m_queue);
 	}
 
 	bool empty() const
@@ -65,6 +68,17 @@ public:
 		m_condVar.notify_one();
 	}
 
+	void emplace(T &&value)
+	{
+		{
+			ScopedLock lock(m_mutex);
+
+			m_queue.emplace(value);
+		}
+
+		m_condVar.notify_one();
+	}
+
 	std::size_t size() const
 	{
 		ScopedLock lock(m_mutex);
@@ -81,7 +95,19 @@ public:
 
 	CConcurrentQueue<T> &operator=(const CConcurrentQueue<T> &other)
 	{
-		m_queue = other.m_queue;
+		if(&other != this)
+		{
+			m_queue = other.m_queue;
+		}
+		return(*this);
+	}
+
+	CConcurrentQueue<T> &operator=(CConcurrentQueue<T> &&other)
+	{
+		if(&other != this)
+		{
+			m_queue.swap(other.m_queue);
+		}
 		return(*this);
 	}
 
