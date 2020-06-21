@@ -14,7 +14,24 @@ public:
 
 	Queue& operator=(const Queue &other) = delete;
 	
-	void push(T &&data)
+	void push(const T &data)
+	{
+		ScopedSpinLock lock(m_lock);
+
+		QueueNode *pNode = m_poolData.Alloc(data);
+
+		if(m_pTailNode)
+		{
+			m_pTailNode->pNextNode = pNode;
+		}
+		else
+		{
+			m_pHeadNode = pNode;
+		}
+		m_pTailNode = pNode;
+	}
+
+	void emplace(T &&data)
 	{
 		ScopedSpinLock lock(m_lock);
 

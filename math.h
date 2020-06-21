@@ -18,26 +18,27 @@ See the license in LICENSE
 void* operator new(size_t size)\
 {\
 	return (_aligned_malloc(size, 16));\
-};\
+}\
 \
 void operator delete(void* ptr)\
 {\
 	_aligned_free(ptr);\
-};\
+}\
 void* operator new(size_t size, void *ptr)\
 {\
 	return(ptr);\
-};\
-\
+}\
+void operator delete(void *ptr, void*)\
+{}\
 void* operator new[](size_t size)\
 {\
 	return (_aligned_malloc(size, 16));\
-};\
+}\
 \
 void operator delete[](void* ptr)\
 {\
 	_aligned_free(ptr);\
-};
+}
 
 #define SX_ALIGNED_OP_MEM2() SX_ALIGNED_OP_MEM
 
@@ -803,12 +804,9 @@ XINLINE float2 SMVector2Normalize(const float2 & V)
 	return(vResult);
 }
 
-
-
-XINLINE SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
+XINLINE SMVECTOR SMVector3SumV(const float3 &V)
 {
-	SMVECTOR vDot;
-	vDot.mmv = _mm_mul_ps(V1, V2);
+	SMVECTOR vDot = V;
 
 	SMVECTOR vTemp;
 	vTemp.mmv = _mm_shuffle_ps(vDot, vDot, _MM_SHUFFLE(2, 1, 2, 1));
@@ -824,16 +822,28 @@ XINLINE SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
 	return(vDot);
 }
 
-XINLINE float SMVector3Dot(const float3 & V1, const float3 & V2)
+XINLINE float SMVector3Sum(const float3 &V)
+{
+	return(SMVector3SumV(V).x);
+}
+
+XINLINE SMVECTOR SMVector3DotV(const float3 & V1, const float3 & V2)
+{
+	SMVECTOR vDot;
+	vDot.mmv = _mm_mul_ps(V1, V2);
+
+	return(SMVector3SumV(vDot));
+}
+
+XINLINE float SMVector3Dot(const float3 &V1, const float3 &V2)
 {
 	return(SMVector3DotV(V1, V2).x);
 }
 
-XINLINE float SMVector3Dot(const float3 & V1)
+XINLINE float SMVector3Dot(const float3 &V1)
 {
 	return(SMVector3DotV(V1, V1).x);
 }
-
 
 XINLINE float3 SMVector3Cross(const float3 & V1, const float3 & V2)
 {

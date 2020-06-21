@@ -65,9 +65,9 @@ public:
 		AllocSize = arr.AllocSize;
 		arr.AllocSize = tmpS;
 
-		void * tmpD = Data;
+		T* tmpD = Data;
 		Data = arr.Data;
-		arr.Data = (T*)tmpD;
+		arr.Data = tmpD;
 	}
 
 	void resize(UINT NewSize)
@@ -143,7 +143,7 @@ public:
 	//	return(*this);
 	//}
 
-	Array & operator=(const Array<T, BlockSize> & arr)
+	Array& operator=(const Array<T, BlockSize> & arr)
 	{
 		//this->AllocSize = arr.AllocSize;
 		//this->Size = arr.Size;
@@ -164,7 +164,7 @@ public:
 		return this->operator[](key);
 	}
 
-	T & operator[](UINT key)
+	T& operator[](UINT key)
 	{
 		if(key > ((UINT)-1) - 128)
 		{
@@ -183,7 +183,7 @@ public:
 	}
 
 
-	T & GetKeyOC(UINT key)
+	T& GetKeyOC(UINT key)
 	{
 		return(Data[key]);
 	}
@@ -198,7 +198,7 @@ public:
 		return this->operator[](key);
 	}
 
-	const T & operator[](UINT key) const
+	const T& operator[](UINT key) const
 	{
 		if(key >= this->Size)
 		{
@@ -210,7 +210,6 @@ public:
 		}
 		return(Data[key]);
 	}
-
 
 	~Array()
 	{
@@ -248,8 +247,15 @@ public:
 		return AllocSize;
 	}
 
+	void quickSort()
+	{
+		quickSort([](const T &a, const T &b){
+			return(a < b); 
+		});
+	}
+
 	template <typename L>
-	void quickSort(const L& CompareFunc)
+	void quickSort(const L& CompareFunc = [](const L &a, const L &b){return(a < b);})
 	{
 		//don't sort 0 or 1 elements
 		if(size() > 1)
@@ -277,6 +283,18 @@ public:
 		}
 		return(-1);
 	}
+
+	template<typename O>
+	void append(const Array<O> &other)
+	{
+		reserve(size() + other.size());
+
+		for(UINT i = 0, l = other.size(); i < l; ++i)
+		{
+			push_back(other[i]);
+		}
+	}
+
 
 protected:
 	/*
@@ -364,9 +382,7 @@ protected:
 
 	void swap(int index0, int index1)
 	{
-		T temp = Data[index0];
-		Data[index0] = Data[index1];
-		Data[index1] = temp;
+		std::swap(Data[index0], Data[index1]);
 	}
 
 	T *Data = NULL;
