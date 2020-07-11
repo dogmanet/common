@@ -14,13 +14,7 @@ See the license in LICENSE
 #	pragma warning(disable:4715)
 #endif
 
-#ifndef WIN64
-#	define STACK_DEFAULT_ALIGN 4
-#else
-#	define STACK_DEFAULT_ALIGN 16
-#endif
-
-template <typename T, int pageSize = 256, int alignBy = STACK_DEFAULT_ALIGN>
+template <typename T, int pageSize = 256, int alignBy = alignof(T)>
 #undef STACK_DEFAULT_ALIGN
 class Stack
 {
@@ -30,7 +24,7 @@ class Stack
 		StackNode *Parent;
 	};
 
-	MemAlloc<StackNode, pageSize, 16, alignBy> Data;
+	MemAlloc<StackNode, pageSize> Data;
 	int SP;
 
 	StackNode * CurrentNode;

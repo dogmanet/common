@@ -35,18 +35,10 @@ struct UsageStats
 	ULONG ulAllocMem; //Количество занятой элементами памяти
 };
 
-#ifndef WIN64
-#	define MEMALLOC_DEFAULT_ALIGN 4
-#	define MEMALLOC_DEFAULT_ALIGN_STR "4"
-#else
-#	define MEMALLOC_DEFAULT_ALIGN 16
-#	define MEMALLOC_DEFAULT_ALIGN_STR "16"
-#endif
-
-template <typename T, int SizeBlock = 256, int SizePage = 16, const int alignBy = MEMALLOC_DEFAULT_ALIGN>
+template <typename T, int SizeBlock = 256, int SizePage = 16, const int alignBy = alignof(T)>
 class MemAlloc
 {
-	static_assert(alignBy % MEMALLOC_DEFAULT_ALIGN == 0 && alignBy >= MEMALLOC_DEFAULT_ALIGN, "alignBy should be multiply of " MEMALLOC_DEFAULT_ALIGN_STR);
+	static_assert(alignBy % alignof(T) == 0 && alignBy >= alignof(T), "alignBy should be multiply of alignof(T)");
 	
 #undef MEMALLOC_DEFAULT_ALIGN
 #undef MEMALLOC_DEFAULT_ALIGN_STR
@@ -57,11 +49,16 @@ class MemAlloc
 		union
 		{
 			UINT IsFree;
-			UINT _padding[alignBy / 4];
+			byte _padding[alignBy];
 		};
 		T data;
 	};
 #pragma pack(pop)
+	struct AlignTest
+	{
+		char start;
+		T end;
+	};
 	struct MemBlock
 	{
 		MemCell * mem;
@@ -76,7 +73,7 @@ public:
 	
 	MemAlloc():memblocks(NULL), NumCurBlock(0), NumCurBlockCount(0)
 	{
-		assert((intptr_t)(&(((MemCell*)0)->data)) - (intptr_t)(((MemCell*)0)->_padding) == alignBy && "Invalid align specified!");
+	//	static_assert((intptr_t)(&(((AlignTest*)0)->end)) - (intptr_t)(((AlignTest*)0)->start) == alignBy, "Invalid align specified!");
 		AllocBlock();
 	}
 
