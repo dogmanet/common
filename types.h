@@ -48,6 +48,41 @@ typedef void* SXWINDOW;
 
 #ifdef _MSC_VER
 #	define strcasecmp _stricmp
+
+inline const char* strcasestr(const char *haystack, const char *needle)
+{
+	size_t iLen1 = strlen(haystack);
+	size_t iLen2 = strlen(needle);
+
+	if(iLen2 > iLen1)
+	{
+		return(NULL);
+	}
+	bool isFound = false;
+	for(size_t i = 0, l = iLen1 - iLen2; i <= l; ++i)
+	{
+		if(tolower(*haystack) == tolower(*needle))
+		{
+			isFound = true;
+			for(size_t j = 1; j < iLen2; ++j)
+			{
+				if(tolower(haystack[j]) != tolower(needle[j]))
+				{
+					isFound = false;
+					break;
+				}
+			}
+		}
+		if(isFound)
+		{
+			return(haystack);
+		}
+		++haystack;
+	}
+
+	return(NULL);
+}
+
 #else
 #	define _aligned_malloc(size, align) memalign((align), (size))
 #	define _aligned_free(ptr) free(ptr)
