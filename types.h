@@ -111,12 +111,9 @@ inline const char* strcasestr(const char *haystack, const char *needle)
 #define DECLARE_CLASS_NOBASE(cls)		\
 	typedef cls ThisClass;
 
-#define mem_del(obj) if(obj){delete obj;}
 #define mem_delete(obj) if(obj){delete obj;obj=0;}
 #define mem_delete_a(obj) if(obj){delete[] obj;obj=0;}
 #define mem_release(obj) if(obj){obj->Release(); obj = 0;}
-#define mem_release_del(obj) if(obj){obj->Release(); obj = 0;}
-#define mem_release_delete(obj)if(obj){ obj->Release();mem_delete(obj)}
 #define mem_free(a) free(a)
 #define mem_alloc(a) malloc(a)
 
@@ -308,13 +305,25 @@ inline int parse_str(char *str, char **ppOut, int iMaxSize, char delim=',')
 		while(*str && (*str == delim || isspace(*str))){++str;}
 		if(ppOut)
 		{
-			ppOut[c++] = str;
+			ppOut[c] = str;
 		}
-		else
+		++c;
+
+		while(*str && *str != delim/* && !isspace(*str)*/){++str;}
+		if(ppOut)
 		{
-			++c;
+			char *tmp = str;
+			--tmp;
+			while(isspace(*tmp))
+			{
+				--tmp;
+			}
+			++tmp;
+			if(tmp != str)
+			{
+				*tmp = 0;
+			}
 		}
-		while(*str && *str != delim && !isspace(*str)){++str;}
 		if(!*str) break;
 		if(ppOut)
 		{
