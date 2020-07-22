@@ -264,7 +264,7 @@ public:
 		}
 	}
 
-	int indexOf(const T &other)
+	int indexOf(const T &other) const
 	{
 		return(indexOf(other, [](const T &a, const T &b){
 			return(a == b);
@@ -272,7 +272,7 @@ public:
 	}
 
 	template <typename L, typename O>
-	int indexOf(const O &other, const L& CompareFunc)
+	int indexOf(const O &other, const L& CompareFunc) const
 	{
 		for(int i = 0, l = size(); i < l; ++i) 
 		{
