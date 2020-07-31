@@ -15,7 +15,7 @@ See the license in LICENSE
 #include "float16.h"
 #include "types.h"
 
-#define SX_ALIGNED_OP_MEM \
+#define SX_ALIGNED_OP_MEM() \
 void* operator new(size_t size)\
 {\
 	return (_aligned_malloc(size, 16));\
@@ -40,8 +40,6 @@ void operator delete[](void* ptr)\
 {\
 	_aligned_free(ptr);\
 }
-
-#define SX_ALIGNED_OP_MEM2() SX_ALIGNED_OP_MEM
 
 #ifdef SM_D3D_CONVERSIONS
 #include <d3dx9math.h>
@@ -128,7 +126,7 @@ XALIGNED(16) struct SMVECTOR
 	};
 
 
-	SX_ALIGNED_OP_MEM
+	SX_ALIGNED_OP_MEM();
 
 
 	/*void* operator new(size_t size)
@@ -608,7 +606,7 @@ XALIGNED(16) struct SMMATRIX
 		float m[4][4];
 	};
 
-	SX_ALIGNED_OP_MEM
+	SX_ALIGNED_OP_MEM();
 
 
 	/*void* operator new(size_t size)
