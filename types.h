@@ -7,7 +7,11 @@ See the license in LICENSE
 #ifndef __TYPES_H
 #define __TYPES_H
 
-#include <stdint.h>
+#ifdef _WIN64
+#	define _X64
+#endif
+
+#include <cstdint>
 #include <string.h>
 #include <memory.h>
 #include <ctype.h>
@@ -15,6 +19,8 @@ See the license in LICENSE
 #include <mutex>
 #include <atomic>
 #include "spinlock.h"
+
+#include "enum_flags.h"
 
 using std::mutex;
 typedef std::unique_lock<std::mutex> ScopedLock;
@@ -37,6 +43,12 @@ typedef wchar_t WCHAR;
 typedef unsigned long ULONG;
 typedef void* SXWINDOW;
 #define XWINDOW_OS_HANDLE SXWINDOW
+
+#ifdef _X64
+typedef uint64_t UINT_PTR;
+#else
+typedef uint32_t UINT_PTR;
+#endif
 
 #ifndef FALSE
 #define FALSE 0

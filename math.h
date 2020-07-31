@@ -12,6 +12,7 @@ See the license in LICENSE
 #include <cstdlib>
 #include <assert.h>
 #include <float.h>
+#include "float16.h"
 #include "types.h"
 
 #define SX_ALIGNED_OP_MEM \
