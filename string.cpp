@@ -50,22 +50,35 @@ See the license in LICENSE
 
 //##########################################################################
 
-const char * String::c_str() const
+const char* String::c_str() const
 {
-	return(m_szString);
+	return(m_szString ? m_szString : "");
 }
 
 String::String()
 {
-	m_szString = new char[1] {0};
 }
 
 String::String(const char * str)
 {
-	m_szString = new char[strlen(str) + 1];
+	int len = (int)strlen(str);
+	m_szString = new char[len + 1];
 	//sprintf(m_szString,"%s",str);
-	memcpy(m_szString, str, strlen(str) + 1);
-	//m_szString[strlen(str)] = 0;
+	memcpy(m_szString, str, len);
+	m_szString[len] = 0;
+}
+
+String::String(const char * str, int iCount)
+{
+	int len = (int)strlen(str);
+	if(iCount >= 0 && len > iCount)
+	{
+		len = iCount;
+	}
+	m_szString = new char[len + 1];
+	//sprintf(m_szString,"%s",str);
+	memcpy(m_szString, str, len);
+	m_szString[len] = 0;
 }
 
 String::String(char sym)
@@ -146,7 +159,7 @@ String::String(String && other)
 {
 	//SAFE_DELETE_A(m_szString);
 	m_szString = other.m_szString;
-	other.m_szString = nullptr;
+	other.m_szString = NULL;
 }
 
 String::~String()
@@ -165,7 +178,7 @@ void String::release()
 String String::operator+(const String &str) const
 {
 	char * ns = new char[length() + str.length() + 1];
-	sprintf(ns, "%s%s", m_szString, str.c_str());
+	sprintf(ns, "%s%s", c_str(), str.c_str());
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -174,7 +187,7 @@ String String::operator+(const String &str) const
 String String::operator+(const char * str)
 {
 	char * ns = new char[length() + strlen(str) + 1];
-	sprintf(ns, "%s%s", m_szString, str);
+	sprintf(ns, "%s%s", c_str(), str);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -183,7 +196,7 @@ String String::operator+(const char * str)
 String String::operator+(const char & sym)
 {
 	char * ns = new char[length() + 2];
-	sprintf(ns, "%s%c", m_szString, sym);
+	sprintf(ns, "%s%c", c_str(), sym);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -192,7 +205,7 @@ String String::operator+(const char & sym)
 String String::operator+(const int & num)
 {
 	char * ns = new char[length() + 64];
-	sprintf(ns, "%s%d", m_szString, num);
+	sprintf(ns, "%s%d", c_str(), num);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -201,7 +214,7 @@ String String::operator+(const int & num)
 String String::operator+(const WORD & num)
 {
 	char * ns = new char[length() + 64];
-	sprintf(ns, "%s%hu", m_szString, num);
+	sprintf(ns, "%s%hu", c_str(), num);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -210,7 +223,7 @@ String String::operator+(const WORD & num)
 String String::operator+(const DWORD & num)
 {
 	char * ns = new char[length() + 64];
-	sprintf(ns, "%s%lu", m_szString, num);
+	sprintf(ns, "%s%lu", c_str(), num);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -219,7 +232,7 @@ String String::operator+(const DWORD & num)
 String String::operator+(const long & num)
 {
 	char * ns = new char[length() + 64];
-	sprintf(ns, "%s%ld", m_szString, num);
+	sprintf(ns, "%s%ld", c_str(), num);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -228,7 +241,7 @@ String String::operator+(const long & num)
 String String::operator+(const double & num)
 {
 	char * ns = new char[length() + 64];
-	sprintf(ns, "%s%G", m_szString, num);
+	sprintf(ns, "%s%G", c_str(), num);
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -237,7 +250,7 @@ String String::operator+(const double & num)
 String String::operator+(const bool & bf)
 {
 	char * ns = new char[length() + (bf ? 5 : 6)];
-	sprintf(ns, "%s%s", m_szString, bf ? "true" : "false");
+	sprintf(ns, "%s%s", c_str(), bf ? "true" : "false");
 	String newSXStr = ns;
 	SAFE_DELETE_A(ns);
 	return(newSXStr);
@@ -346,7 +359,7 @@ String & String::operator=(String && other)
 	{
 		SAFE_DELETE(m_szString);
 		m_szString = other.m_szString;
-		other.m_szString = nullptr;
+		other.m_szString = NULL;
 	}
 	return(*this);
 }
@@ -357,7 +370,7 @@ String & String::operator=(String && other)
 String & String::operator+=(const String & str)
 {
 	char * ns = new char[length() + str.length() + 1];
-	sprintf(ns, "%s%s", m_szString, str.c_str());
+	sprintf(ns, "%s%s", c_str(), str.c_str());
 	SAFE_DELETE_A(m_szString);
 	m_szString = ns;
 	return(*this);
@@ -366,7 +379,7 @@ String & String::operator+=(const String & str)
 String & String::operator+=(const char * str)
 {
 	char * newstring = new char[length() + strlen(str) + 1];
-	sprintf(newstring, "%s%s", m_szString, str);
+	sprintf(newstring, "%s%s", c_str(), str);
 	SAFE_DELETE_A(m_szString);
 	m_szString = newstring;
 	return(*this);
@@ -375,7 +388,7 @@ String & String::operator+=(const char * str)
 String & String::operator+=(const char & sym)
 {
 	char * newstring = new char[length() + 2];
-	sprintf(newstring, "%s%c", m_szString, sym);
+	sprintf(newstring, "%s%c", c_str(), sym);
 	SAFE_DELETE_A(m_szString);
 	m_szString = newstring;
 	return(*this);
@@ -384,7 +397,7 @@ String & String::operator+=(const char & sym)
 String & String::operator+=(const int & num)
 {
 	char * tmp = new char[length() + 64];
-	sprintf(tmp, "%s%d", m_szString, num);
+	sprintf(tmp, "%s%d", c_str(), num);
 	SAFE_DELETE_A(m_szString);
 	m_szString = tmp;
 	return(*this);
@@ -393,7 +406,7 @@ String & String::operator+=(const int & num)
 String & String::operator+=(const WORD & num)
 {
 	char * tmp = new char[length() + 64];
-	sprintf(tmp, "%s%hu", m_szString, num);
+	sprintf(tmp, "%s%hu", c_str(), num);
 	SAFE_DELETE_A(m_szString);
 	m_szString = tmp;
 	return(*this);
@@ -402,7 +415,7 @@ String & String::operator+=(const WORD & num)
 String & String::operator+=(const DWORD & num)
 {
 	char * tmp = new char[length() + 64];
-	sprintf(tmp, "%s%lu", m_szString, num);
+	sprintf(tmp, "%s%lu", c_str(), num);
 	SAFE_DELETE_A(m_szString);
 	m_szString = tmp;
 	return(*this);
@@ -411,7 +424,7 @@ String & String::operator+=(const DWORD & num)
 String & String::operator+=(const long & num)
 {
 	char * tmp = new char[length() + 64];
-	sprintf(tmp, "%s%ld", m_szString, num);
+	sprintf(tmp, "%s%ld", c_str(), num);
 	SAFE_DELETE_A(m_szString);
 	m_szString = tmp;
 	return(*this);
@@ -420,7 +433,7 @@ String & String::operator+=(const long & num)
 String & String::operator+=(const double & num)
 {
 	char * tmp = new char[length() + 64];
-	sprintf(tmp, "%s%G", m_szString, num);
+	sprintf(tmp, "%s%G", c_str(), num);
 	SAFE_DELETE_A(m_szString);
 	m_szString = tmp;
 	return(*this);
@@ -681,7 +694,7 @@ String & String::operator/=(const bool & bf)
 
 bool String::operator==(const String & str) const
 {
-	if(&str == this || !strcmp(m_szString, str.m_szString))
+	if(&str == this || (!m_szString && !str.m_szString) || (m_szString && str.m_szString && !strcmp(m_szString, str.m_szString)))
 	{
 		return(true);
 	}
@@ -823,7 +836,7 @@ const char & String::operator[](const DWORD & num) const
 
 DWORD String::length() const
 {
-	return((DWORD)strlen(m_szString));
+	return(m_szString ? (DWORD)strlen(m_szString) : 0);
 }
 
 DWORD String::find(const char * str, DWORD pos) const

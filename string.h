@@ -27,6 +27,7 @@ public:
 	friend class StringW;
 	String();
 	String(const char *	str);
+	String(const char *	str, int iCount);
 	String(const char		sym);
 	String(const int		num);
 	String(const unsigned short		num);
@@ -211,7 +212,7 @@ public:
 	bool operator<(const String & s) const;
 
 protected:
-	char * m_szString;
+	char * m_szString = NULL;
 };
 
 //bool operator<(const String & a, const String & b);
