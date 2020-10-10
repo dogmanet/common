@@ -159,17 +159,24 @@ public:
 		return(*this);
 	}
 
+	operator T*()
+	{
+		return(Data);
+	}
+	
+	operator const T*() const
+	{
+		return(Data);
+	}
+
 	T& get(UINT key)
 	{
 		return this->operator[](key);
 	}
 
-	T& operator[](UINT key)
+	T& operator[](int _key)
 	{
-		if(key > ((UINT)-1) - 128)
-		{
-
-		}
+		UINT key = (UINT)_key;
 		if(key >= this->Size)
 		{
 			if(key >= this->AllocSize)
@@ -198,16 +205,8 @@ public:
 		return this->operator[](key);
 	}
 
-	const T& operator[](UINT key) const
+	const T& operator[](int key) const
 	{
-		if(key >= this->Size)
-		{
-			/*_asm
-			{
-			int 3;
-			};*/
-			//SkyXEngine::Core::InError("exit in array");
-		}
 		return(Data[key]);
 	}
 
