@@ -253,6 +253,27 @@ public:
 		});
 	}
 
+	void insert(const T &data, int index)
+	{
+		insert(data, (UINT)index);
+	}
+
+	void insert(const T &data, UINT index)
+	{
+		if (index >= this->size())
+		{
+			(*this)[index] = data;
+		}
+		else
+		{
+			for (int i = Size; i > index; --i)
+			{
+				(*this)[i] = (*this)[i - 1];
+			}
+			(*this)[index] = data;
+		}
+	}
+
 	template <typename L>
 	void insert(const T &data, const L &CompareFunc = [](const L &a, const L &b){return(a < b); })
 	{
