@@ -254,6 +254,19 @@ public:
 	}
 
 	template <typename L>
+	void insert(const T &data, const L &CompareFunc = [](const L &a, const L &b){return(a < b); })
+	{
+		this->push_back(data);
+		int item = size() - 2;
+		while (item >= 0 && CompareFunc(this->Data[item], data))
+		{
+			this->Data[item + 1] = this->Data[item];
+			this->Data[item] = data;
+			--item;
+		}
+	}
+
+	template <typename L>
 	void quickSort(const L& CompareFunc = [](const L &a, const L &b){return(a < b);})
 	{
 		//don't sort 0 or 1 elements
@@ -346,8 +359,6 @@ protected:
 			(&this->Data[i])->~T();
 		}
 	}
-
-
 
 	template <typename L>
 	void quickSortInternal(const L& CompareFunc, int lo, int hi)
