@@ -21,7 +21,7 @@ public:
 	template<typename T>
 	size_t read(T *pOut, UINT uCount = 1)
 	{
-		return(readBytes(pOut, sizeof(T) * uCount));
+		return(readBytes((byte*)pOut, sizeof(T) * uCount));
 	}
 
 	void movR(int i = 0)
@@ -116,13 +116,22 @@ public:
 	}
 	size_t readBytes(byte *pBuf, size_t uBufLen)
 	{
+		size_t uZeroBuf = 0;
 		if(uBufLen > m_uBufSize - m_uBufPos)
 		{
-			uBufLen = m_uBufSize - m_uBufPos;
+			uZeroBuf = uBufLen - (m_uBufSize - m_uBufPos);
+			uBufLen -= uZeroBuf;
 		}
 
-		memcpy(pBuf, &(m_pBuf[m_uBufPos]), uBufLen);
-		m_uBufPos += uBufLen;
+		if(uBufLen)
+		{
+			memcpy(pBuf, &(m_pBuf[m_uBufPos]), uBufLen);
+			m_uBufPos += uBufLen;
+		}
+		if(uZeroBuf)
+		{
+			memset(pBuf + uBufLen, 0, uZeroBuf);
+		}
 
 		return(uBufLen);
 	}
