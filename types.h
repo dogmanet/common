@@ -347,4 +347,12 @@ inline int parse_str(char *str, char **ppOut, int iMaxSize, char delim=',')
 	return(c);
 }
 
+template<typename T>
+T* MovePtr(T *ptr, size_t uOffset)
+{
+	return((T*)(((byte*)ptr) + uOffset));
+}
+
+#define MOVE_PTR(ptr, offset) ptr = MovePtr(ptr, offset)
+
 #endif
