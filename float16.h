@@ -5,15 +5,34 @@
 
 class float16_t
 {
+private:
+	union f32
+	{
+		struct
+		{
+			unsigned int m : 23;
+			unsigned int e : 8;
+			unsigned int s : 1;
+		} i;
+		float f;
+	};
+
+
 public:
 	float16_t()
 	{
-		m_siValue = 0;
+		m_siValue.m = 0;
+		m_siValue.e = 0;
+		m_siValue.s = 0;
 	}
 	float16_t(float value)
 	{
-		m_siValue = (((*(int*)&value) & 0x7fffffff) >> 13) - (0x38000000 >> 13);
-		m_siValue |= (((*(int*)&value) & 0x80000000) >> 16);
+		f32 f;
+		f.f = value;
+
+		m_siValue.m = f.i.m >> 13;
+		m_siValue.e = f.i.e + 15 - 127;
+		m_siValue.s = f.i.s;
 	}
 
 	float16_t(const float16_t &other)
@@ -28,12 +47,12 @@ public:
 
 	operator float() const
 	{
-		int fltInt32 = ((m_siValue & 0x8000) << 16);
-		fltInt32 |= ((m_siValue & 0x7fff) << 13) + 0x38000000;
+		f32 f;
+		f.i.s = m_siValue.s;
+		f.i.e = m_siValue.e;
+		f.i.m = m_siValue.m;
 
-		float fRet;
-		memcpy(&fRet, &fltInt32, sizeof(float));
-		return(fRet);
+		return(f.f);
 	}
 	
 	float16_t operator-() const
@@ -80,7 +99,12 @@ public:
 	}
 
 private:
-	short m_siValue;
+	struct
+	{
+		unsigned short m: 10;
+		unsigned short e: 5;
+		unsigned short s: 1;
+	} m_siValue;
 };
 
 #endif
