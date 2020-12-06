@@ -7,10 +7,6 @@ See the license in LICENSE
 #ifndef __AUDIORAWDESC_H
 #define __AUDIORAWDESC_H
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4800)
-#endif
-
 #include <assert.h>
 
 //! тип аудио семпла
@@ -139,7 +135,7 @@ struct AudioRawDesc
 				fmtSample = AUDIO_SAMPLE_FMT_F64;
 				break;
 			default:
-				assert(!bool(u8BytesPerSample));
+				assert(!"Invalid u8BytesPerSample");
 				break;
 			}
 		}
