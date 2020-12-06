@@ -2080,7 +2080,7 @@ XINLINE SMQuaternion operator*(const SMQuaternion & q1, const SMQuaternion & q2)
 	F = (q1.x - q1.z) * (q2.x - q2.y);
 	G = (q1.w + q1.y) * (q2.w - q2.z);
 	H = (q1.w - q1.y) * (q2.w + q2.z);
-	return(SMQuaternion(A - (E + F + G + H) * 0.5f, -C + (E - F + G - H) * 0.5f, -D + (E - F - G + H) * 0.5f, B + (-E - F + G + H) * 0.5f).Normalize());
+	return(SMQuaternion(A - (E + F + G + H) * 0.5f, -C + (E - F + G - H) * 0.5f, -D + (E - F - G + H) * 0.5f, B + (-E - F + G + H) * 0.5f)/*.Normalize()*/);
 }
 
 XINLINE float3 operator *(const SMQuaternion & q, const float3 & p)
