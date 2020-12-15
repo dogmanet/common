@@ -24,6 +24,25 @@ class s4g_Stack;
 template<typename T, int BlockSize=16>
 class Array
 {
+private:
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4180)
+#endif
+	template<typename T>
+	struct add_const_to_pointee
+	{
+		typedef T type;
+	};
+
+	template <typename T>
+	struct add_const_to_pointee<T*>
+	{
+		typedef const T* type;
+	};
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 public:
 	Array()
 	{
@@ -297,9 +316,9 @@ public:
 		}
 	}
 
-	int indexOf(const T &other) const
+	int indexOf(typename add_const_to_pointee<T>::type const &other) const
 	{
-		return(indexOf(other, [](const T &a, const T &b){
+		return(indexOf(other, [](const T &a, typename add_const_to_pointee<T>::type const &b){
 			return(a == b);
 		}));
 	}
