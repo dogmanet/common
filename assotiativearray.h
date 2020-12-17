@@ -9,6 +9,11 @@ See the license in LICENSE
 //#include "DSbase.h"
 #include <common/MemAlloc.h>
 #include <common/stack.h>
+#ifdef AA_DEBUG
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <shellapi.h>
+#endif
 
 #ifndef NULL
 #define NULL 0
@@ -39,9 +44,8 @@ public:
 private:
 	unsigned int Size_;
 	Node * RootNode;
-
-
-	Node * TreeSearch(const SX_KEYTYPE & key) const
+	
+	Node* TreeSearch(const SX_KEYTYPE &key) const
 	{
 		if(searchCache && TmpNode && TmpNode->Key == key)
 		{
@@ -193,7 +197,7 @@ private:
 		}
 		this->RootNode->IsBlack = true;
 	}
-	void TreeFixDel(Node * node)
+	void TreeFixDel(Node *node)
 	{
 		while(node != this->RootNode && node->IsBlack)
 		{
@@ -207,14 +211,14 @@ private:
 					TreeRotateLeft(node->Parent);
 					tmpNode = node->Parent->Right;
 				}
-				if(tmpNode->Left->IsBlack && tmpNode->Right->IsBlack)
+				if((!tmpNode->Left || tmpNode->Left->IsBlack) && (!tmpNode->Right || tmpNode->Right->IsBlack))
 				{
 					tmpNode->IsBlack = false;
 					node = node->Parent;
 				}
 				else
 				{
-					if(tmpNode->Right->IsBlack)
+					if(!tmpNode->Right || tmpNode->Right->IsBlack)
 					{
 						tmpNode->Left->IsBlack = true;
 						tmpNode->IsBlack = false;
@@ -238,14 +242,14 @@ private:
 					TreeRotateRight(node->Parent);
 					tmpNode = node->Parent->Left;
 				}
-				if(tmpNode->Right->IsBlack && tmpNode->Left->IsBlack)
+				if((!tmpNode->Right || tmpNode->Right->IsBlack) && (!tmpNode->Left || tmpNode->Left->IsBlack))
 				{
 					tmpNode->IsBlack = false;
 					node = node->Parent;
 				}
 				else
 				{
-					if(tmpNode->Left->IsBlack)
+					if(!tmpNode->Left || tmpNode->Left->IsBlack)
 					{
 						tmpNode->Right->IsBlack = true;
 						tmpNode->IsBlack = false;
@@ -263,7 +267,7 @@ private:
 		node->IsBlack = true;
 	}
 
-	Node* TreeInsert(const SX_KEYTYPE & key, bool * found = NULL)
+	Node* TreeInsert(const SX_KEYTYPE &key, bool *found = NULL)
 	{
 		Node * tmpCur;
 		Node * tmpParent;
@@ -326,27 +330,348 @@ private:
 		return(tmpNode);
 	}
 
-	//void TreeDelete(Node * node);
+	void SwapNodes(Node **ppRoot, Node *pA, Node *pB)
+	{
+		Node *pOldAParent = pA->Parent;
+		Node *pOldALeft = pA->Left;
+		Node *pOldARight = pA->Right;
+		Node *pOldBParent = pB->Parent;
+		Node *pOldBLeft = pB->Left;
+		Node *pOldBRight = pB->Right;
 
+
+		if(pA == *ppRoot)
+		{
+			*ppRoot = pB;
+		}
+		else if(pB == *ppRoot)
+		{
+			*ppRoot = pA;
+		}
+
+		if(pOldALeft)
+		{
+			pOldALeft->Parent = pB;
+		}
+		if(pOldARight)
+		{
+			pOldARight->Parent = pB;
+		}
+
+		if(pOldBLeft)
+		{
+			pOldBLeft->Parent = pA;
+		}
+		if(pOldBRight)
+		{
+			pOldBRight->Parent = pA;
+		}
+
+		if(pOldAParent && pOldAParent == pOldBParent)
+		{
+			std::swap(pOldAParent->Left, pOldAParent->Right);
+		}
+		else
+		{
+			if(pOldAParent)
+			{
+				if(pOldAParent->Left == pA)
+				{
+					pOldAParent->Left = pB;
+				}
+				else
+				{
+					pOldAParent->Right = pB;
+				}
+			}
+			if(pOldBParent)
+			{
+				if(pOldBParent->Left == pB)
+				{
+					pOldBParent->Left = pA;
+				}
+				else
+				{
+					pOldBParent->Right = pA;
+				}
+			}
+		}
+
+		if(pA != pOldBParent)
+		{
+			pA->Parent = pOldBParent;
+		}
+		else
+		{
+			pA->Parent = pB;
+		}
+		
+		if(pB != pOldAParent)
+		{
+			pB->Parent = pOldAParent;
+		}
+		else
+		{
+			pB->Parent = pA;
+		}
+
+		if(pA != pOldBLeft)
+		{
+			pA->Left = pOldBLeft;
+		}
+		else
+		{
+			pA->Left = pB;
+		}
+
+		if(pA != pOldBRight)
+		{
+			pA->Right = pOldBRight;
+		}
+		else
+		{
+			pA->Right = pB;
+		}
+
+		if(pB != pOldALeft)
+		{
+			pB->Left = pOldALeft;
+		}
+		else
+		{
+			pB->Left = pA;
+		}
+
+		if(pB != pOldARight)
+		{
+			pB->Right = pOldARight;
+		}
+		else
+		{
+			pB->Right = pA;
+		}
+
+		bool oldAColor = pA->IsBlack;
+		pA->IsBlack = pB->IsBlack;
+		pB->IsBlack = oldAColor;
+	}
+
+	void TreeDelete(const SX_KEYTYPE &key)
+	{
+		Node *pNode = TreeSearch(key);
+		if(pNode)
+		{
+			this->Size_--;
+			// case R2, B2
+			if(pNode->Left && pNode->Right)
+			{
+				Node *pMinNode = minValueNode(pNode->Right);
+
+				SwapNodes(&RootNode, pMinNode, pNode);
+			}
+			
+			// case B1
+			if(pNode->IsBlack && (pNode->Left || pNode->Right))
+			{
+				Node *pChildNode = pNode->Left ? pNode->Left : pNode->Right;
+
+				pChildNode->Parent = pNode->Parent;
+				if(!pNode->Parent)
+				{
+					RootNode = pChildNode;
+				}
+				else
+				{
+					if(pNode == pNode->Parent->Left)
+					{
+						pNode->Parent->Left = pChildNode;
+					}
+					else
+					{
+						pNode->Parent->Right = pChildNode;
+					}
+				}
+
+				pChildNode->IsBlack = true;
+				
+				MemVals.Delete(pNode->Val);
+				MemNodes.Delete(pNode);
+				return;
+			}
+
+			// case R0, B0
+			if(!pNode->Left && !pNode->Right)
+			{
+				Node *pParent = pNode->Parent;
+
+				if(pParent)
+				{
+
+					Node leafNode = {0, &leafNode, &leafNode, true};
+
+					if(pParent->Left == pNode)
+					{
+						pParent->Left = &leafNode;
+					}
+					else
+					{
+						pParent->Right = &leafNode;
+					}
+					leafNode.Parent = pParent;
+
+					bool isBlack = pNode->IsBlack;
+
+					MemVals.Delete(pNode->Val);
+					MemNodes.Delete(pNode);
+
+					if(isBlack)
+					{
+						TreeFixDel(&leafNode);
+					}
+					if(leafNode.Parent)
+					{
+						if(leafNode.Parent->Left == &leafNode)
+						{
+							leafNode.Parent->Left = NULL;
+						}
+						else
+						{
+							leafNode.Parent->Right = NULL;
+						}
+					}
+					else if(RootNode == &leafNode)
+					{
+						RootNode = NULL;
+					}
+				}
+				else
+				{
+					RootNode = NULL;
+					MemVals.Delete(pNode->Val);
+					MemNodes.Delete(pNode);
+				}
+				return;
+			}
+		}
+	}
+
+	Node* minValueNode(Node *node)
+	{
+		Node *ptr = node;
+
+		while(ptr->Left != nullptr)
+		{
+			ptr = ptr->Left;
+		}
+
+		return(ptr);
+	}
+
+#ifdef AA_DEBUG
+	bool TestNode(Node *pNode, int iDepth, int *pMaxDepth)
+	{
+		if(!pNode)
+		{
+			if(*pMaxDepth < 0)
+			{
+				*pMaxDepth = iDepth;
+			}
+
+			return(*pMaxDepth == iDepth);
+		}
+
+		if(pNode->Parent && !pNode->IsBlack && !pNode->Parent->IsBlack)
+		{
+			return(false);
+		}
+
+		return(TestNode(pNode->Left, iDepth + (pNode->IsBlack ? 1 : 0), pMaxDepth) && TestNode(pNode->Right, iDepth + (pNode->IsBlack ? 1 : 0), pMaxDepth));
+	}
+
+	bool TreeTest()
+	{
+		/*
+		- Если узел красный, то оба его потомка черны.
+		- На всех ветвях дерева, ведущих от его корня к листьям, число черных узлов одинаково.
+		- Корень дерева всегда чёрный
+		*/
+
+		if(!RootNode)
+		{
+			return(true);
+		}
+
+		if(!RootNode->IsBlack)
+		{
+			return(false);
+		}
+
+		int iMaxDepth = -1;
+		return(TestNode(RootNode, 0, &iMaxDepth));
+	}
+
+	void DrawNode(FILE *fp, Node *pNode)
+	{
+		static UINT uCounter = 0;
+		if(!pNode)
+		{
+			return;
+		}
+		if(pNode->Parent)
+		{
+			fprintf(fp, "\tn%u -- n%u ;", pNode->Parent->Key, pNode->Key);
+		}
+		
+		fprintf(fp, "\tn%u [label=\"%u\"%s] ;\n", pNode->Key, pNode->Key, pNode->IsBlack ? "" : ",color=\"#ff0000\"");
+
+		if(pNode->Left)
+		{
+			DrawNode(fp, pNode->Left);
+		}
+		else
+		{
+			// uCounter
+			fprintf(fp, "\tn%u -- null%u ;", pNode->Key, uCounter);
+			fprintf(fp, "\tnull%u [label=\"\", shape=square, width=\".1\", height=\".1\"] ;\n", uCounter);
+
+			++uCounter;
+		}
+
+		if(pNode->Right)
+		{
+			DrawNode(fp, pNode->Right);
+		}
+		else
+		{
+			// uCounter
+			fprintf(fp, "\tn%u -- null%u ;", pNode->Key, uCounter);
+			fprintf(fp, "\tnull%u [label=\"\", shape=square, width=\".1\", height=\".1\"] ;\n", uCounter);
+
+			++uCounter;
+		}
+	}
+#endif
 
 	MemAlloc<Node, ReservePage, 8> MemNodes;
 	MemAlloc<SX_VALTYPE, ReservePage, 8> MemVals;
-
-	void TreeReleaseNode(Node * node)
-	{
-		if(node->Left)
-		{
-			TreeReleaseNode(node->Left);
-		}
-		if(node->Right)
-		{
-			TreeReleaseNode(node->Right);
-		}
-		SX_SAFE_DELETE(node->Val);
-		SX_SAFE_DELETE(node);
-	}
-
 public:
+
+#ifdef AA_DEBUG
+	void Draw()
+	{
+		FILE *fp = fopen("E:/src/Graphviz/inp.dot", "wb");
+
+		fputs("graph \"\"\n{\n\tnode [fontsize=8,width=\".2\", height=\".2\", margin=0, shape=circle];\n", fp);
+
+		DrawNode(fp, RootNode);
+
+		fputs("}\n", fp);
+
+		fclose(fp);
+
+		ShellExecuteA(NULL, "open", "E:/src/Graphviz/gen.bat", "", "E:/src/Graphviz", 0);
+	}
+#endif
 
 	class Iterator
 	{
@@ -634,11 +959,6 @@ public:
 	this->MemVals = a.MemVals;
 	//printf("AssotiativeArray()\n");
 	}*/
-	~AssotiativeArray()
-	{
-		//printf("~AssotiativeArray()\n");
-		Release();
-	}
 
 	bool KeyExists(const SX_KEYTYPE & key, const Node ** pNode = NULL) const
 	{
@@ -702,7 +1022,7 @@ public:
 		return(TmpNode ? TmpNode->Val : NULL);
 	}
 
-	void Insert(const SX_KEYTYPE & key, const SX_VALTYPE & val);
+//	void Insert(const SX_KEYTYPE & key, const SX_VALTYPE & val);
 
 	unsigned int Size() const
 	{
@@ -718,9 +1038,9 @@ public:
 	}
 	}*/
 
-	void erase(SX_KEYTYPE val)
+	void erase(const SX_KEYTYPE &key)
 	{
-		//@@TODO: Implement me
+		TreeDelete(key);
 	}
 
 	void clear()
@@ -758,12 +1078,17 @@ public:
 		return(NULL);
 	}
 
-	void Release()
+#ifdef AA_DEBUG
+	bool TestIntegrity()
 	{
-		//TreeReleaseNode(this->RootNode);
-		this->RootNode = NULL;
+		return(TreeTest());
 	}
+#endif
 };
+
+template<typename SX_KEYTYPE, typename SX_VALTYPE, bool searchCache = false, int ReservePage = 256>
+using Map = AssotiativeArray<SX_KEYTYPE, SX_VALTYPE, searchCache, ReservePage>;
+
 #if defined(_WINDOWS)
 #	pragma warning(pop)
 #endif
