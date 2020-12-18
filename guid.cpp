@@ -46,6 +46,6 @@ void XGUIDToSting(const XGUID &guid, char *dst, int nBufSize)
 
 bool XGUIDFromString(XGUID *pGUID, const char *szGUID)
 {
-	return(11 == sscanf(szGUID, "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}", &pGUID->Data1, &pGUID->Data2, &pGUID->Data3,
+	return(11 == sscanf(szGUID, "{%X-%hX-%hX-%2hhX%2hhX-%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX}", &pGUID->Data1, &pGUID->Data2, &pGUID->Data3,
 		&pGUID->Data40, &pGUID->Data41, &pGUID->Data42, &pGUID->Data43, &pGUID->Data44, &pGUID->Data45, &pGUID->Data46, &pGUID->Data47));
 }
