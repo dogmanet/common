@@ -46,7 +46,7 @@ private:
 public:
 	Array()
 	{
-		Alloc();
+		// Alloc();
 	}
 
 	Array(const T &val, UINT iCount)
