@@ -46,6 +46,21 @@ void XGUIDToSting(const XGUID &guid, char *dst, int nBufSize)
 
 bool XGUIDFromString(XGUID *pGUID, const char *szGUID)
 {
-	return(11 == sscanf(szGUID, "{%X-%hX-%hX-%2hhX%2hhX-%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX}", &pGUID->Data1, &pGUID->Data2, &pGUID->Data3,
-		&pGUID->Data40, &pGUID->Data41, &pGUID->Data42, &pGUID->Data43, &pGUID->Data44, &pGUID->Data45, &pGUID->Data46, &pGUID->Data47));
+	unsigned short us1 = 0;
+	unsigned short us2 = 0;
+	unsigned short us3 = 0;
+	unsigned short us4 = 0;
+	bool isSuccessfull = 7 == sscanf(szGUID, "{%8X-%4hX-%4hX-%4hX-%4hX%4hX%4hX}", &pGUID->Data1, &pGUID->Data2, &pGUID->Data3,
+		&us1, &us2, &us3, &us4);
+
+	pGUID->Data40 = (us1 & 0xFF00) >> 8;
+	pGUID->Data41 = us1 & 0xFF;
+	pGUID->Data42 = (us2 & 0xFF00) >> 8;
+	pGUID->Data43 = us2 & 0xFF;
+	pGUID->Data44 = (us3 & 0xFF00) >> 8;
+	pGUID->Data45 = us3 & 0xFF;
+	pGUID->Data46 = (us4 & 0xFF00) >> 8;
+	pGUID->Data47 = us4 & 0xFF;
+
+	return(isSuccessfull);
 }
