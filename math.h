@@ -2848,6 +2848,22 @@ XINLINE bool SMAABBIntersectAABB(const SMAABB &aabbA, const SMAABB &aabbB, SMAAB
 	return(result);
 }
 
+XINLINE float SMDistancePointBeam2(const float3 &p, const float3 &start, const float3 &dir)
+{
+	float3 v = dir;
+	float3 w = p - start;
+	float c1;
+	if((c1 = SMVector3Dot(w, v)) <= 0.0f)
+	{
+		return(SMVector3Length2(p - start));
+	}
+	float c2 = SMVector3Dot(v, v);
+
+	float b = c1 / c2;
+	float3 Pb = start + b * v;
+	return(SMVector3Length2(p - Pb));
+}
+
 //##########################################################################
 
 //! возвращает нормаль треугольника
@@ -2856,13 +2872,9 @@ XINLINE float3 TriGetNormal(const float4 &vPointA, const float4 &vPointB, const 
 	return SMVector3Normalize(SMVector3Cross(vPointC - vPointA, vPointB - vPointA));
 }
 
+#if 0
 XINLINE float SMBoxRayIntersection(const float3 &vBoxMin, const float3 &vBoxMax, const float3 &vRayOrigin, const float3 &vRayDir)
 {
-	if (fabsf(vRayDir.x) <= FLT_EPSILON || fabsf(vRayDir.y) <= FLT_EPSILON || fabsf(vRayDir.z) <= FLT_EPSILON)
-	{
-		return(-1);
-	}
-
 	float3 vMin = (vBoxMin - vRayOrigin) / vRayDir;
 	float3 vMax = (vBoxMax - vRayOrigin) / vRayDir;
 
@@ -2876,8 +2888,64 @@ XINLINE float SMBoxRayIntersection(const float3 &vBoxMin, const float3 &vBoxMax,
 	if (fNear > fFar) return(-1);
 	if (fFar < 0.0f) return(-1);
 
+	bool isParallel = fabsf(vRayDir.x) <= FLT_EPSILON || fabsf(vRayDir.y) <= FLT_EPSILON || fabsf(vRayDir.z) <= FLT_EPSILON;
+	
 	if (fNear > 0.0f) return(fNear);
 	return(fFar);
+}
+#endif
+
+XINLINE bool SMRayIntersectAABB(const SMAABB &aabb, const float3 &vRayOrigin, const float3 &vRayDir)
+{
+	float3 vExtents, vCenter;
+	vCenter = (aabb.vMin + aabb.vMax) * 0.5f;
+	vExtents = aabb.vMax - vCenter;
+
+	float3 vDelta = (vRayOrigin - vCenter);
+	float3 vDelta2 = vDelta * vRayDir;
+
+	if(
+		fabsf(vDelta.x) > vExtents.x && vDelta2.x >= 0.0f
+		|| fabsf(vDelta.y) > vExtents.y && vDelta2.y >= 0.0f
+		|| fabsf(vDelta.z) > vExtents.z && vDelta2.z >= 0.0f
+		)
+	{
+		return(false);
+	}
+	
+
+	float f;
+	f = vRayDir.y * vDelta.z - vRayDir.z * vDelta.y;
+	if(fabsf(f) > vExtents.y * fabsf(vRayDir.z) + vExtents.z * fabsf(vRayDir.y))return(false);
+	f = vRayDir.z * vDelta.x - vRayDir.x * vDelta.z;
+	if(fabsf(f) > vExtents.x * fabsf(vRayDir.z) + vExtents.z * fabsf(vRayDir.x))return(false);
+	f = vRayDir.x * vDelta.y - vRayDir.y * vDelta.x;
+	if(fabsf(f) > vExtents.x * fabsf(vRayDir.y) + vExtents.y * fabsf(vRayDir.x))return(false);
+	return(true);
+}
+
+
+XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const float3 &vC,
+	const float3 &l1, const float3 &l2, float3 *pvOut)
+{
+	float3 n = SMVector3Normalize(SMVector3Cross((vB - vA), (vC - vB)));
+	float d1 = SMVector3Dot((l1 - vA), n) / SMVector3Length(n);
+	float d2 = SMVector3Dot((l2 - vA), n) / SMVector3Length(n);
+
+	if((d1 > 0 && d2 > 0) || (d1 < 0 && d2 < 0))
+		return(false);
+
+	float3 vIntersectPoint = l1 + (l2 - l1) * (-d1 / (d2 - d1));
+	if(SMVector3Dot(SMVector3Cross((vB - vA), (vIntersectPoint - vA)), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Cross((vC - vB), (vIntersectPoint - vB)), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Cross((vA - vC), (vIntersectPoint - vC)), n) <= 0) return(false);
+
+	if(pvOut)
+	{
+		*pvOut = vIntersectPoint;
+	}
+
+	return(true);
 }
 
 #endif
