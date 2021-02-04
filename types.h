@@ -127,6 +127,7 @@ inline const char* strcasestr(const char *haystack, const char *needle)
 #define mem_delete(obj) if(obj){delete obj;obj=0;}
 #define mem_delete_a(obj) if(obj){delete[] obj;obj=0;}
 #define mem_release(obj) if(obj){obj->Release(); obj = 0;}
+#define add_ref(obj) if(obj){obj->AddRef();}
 #define mem_free(a) free(a)
 #define mem_alloc(a) malloc(a)
 
