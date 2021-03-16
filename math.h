@@ -2855,8 +2855,20 @@ XINLINE float SMDistancePointBeam2(const float3 &p, const float3 &start, const f
 	float c1;
 	if((c1 = SMVector3Dot(w, v)) <= 0.0f)
 	{
-		return(SMVector3Length2(p - start));
+		return(SMVector3Length2(w));
 	}
+	float c2 = SMVector3Dot(v, v);
+
+	float b = c1 / c2;
+	float3 Pb = start + b * v;
+	return(SMVector3Length2(p - Pb));
+}
+
+XINLINE float SMDistancePointLine2(const float3 &p, const float3 &start, const float3 &dir)
+{
+	float3 v = dir;
+	float3 w = p - start;
+	float c1 = SMVector3Dot(w, v);
 	float c2 = SMVector3Dot(v, v);
 
 	float b = c1 / c2;
