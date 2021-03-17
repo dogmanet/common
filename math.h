@@ -111,6 +111,37 @@ XINLINE float saturatef(float x)
 	return clampf(x, 0.f, 1.f);
 }
 
+XINLINE float round_step(float x, float fStep)
+{
+	float fHalfStep = fStep * 0.5f;
+
+	float fFrac = fmodf(x, fStep);
+	if(fFrac >= 0.0f)
+	{
+		if(fFrac > fHalfStep)
+		{
+			x += fStep - fFrac;
+		}
+		else
+		{
+			x -= fFrac;
+		}
+	}
+	else
+	{
+		if(fFrac < -fHalfStep)
+		{
+			x -= fStep + fFrac;
+		}
+		else
+		{
+			x -= fFrac;
+		}
+	}
+
+	return(x);
+}
+
 XALIGNED(16) struct SMVECTOR
 {
 	union
