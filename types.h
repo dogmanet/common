@@ -21,6 +21,13 @@ See the license in LICENSE
 #include "spinlock.h"
 #include "guid.h"
 
+#ifdef __unix
+#include <unistd.h>
+#include <malloc.h>
+#include <stdarg.h>
+#include <pthread.h>
+#endif
+
 #include "enum_flags.h"
 
 using std::mutex;
@@ -95,26 +102,55 @@ inline const char* strcasestr(const char *haystack, const char *needle)
 
 	return(NULL);
 }
-
+#	define vscprintf _vscprintf
 #else
 #	define _aligned_malloc(size, align) memalign((align), (size))
 #	define _aligned_free(ptr) free(ptr)
 #	define __forceinline inline
+
+
+inline int vscprintf(const char * format, va_list pargs)
+{
+	int retval;
+	va_list argcopy;
+	va_copy(argcopy, pargs);
+	retval = vsnprintf(NULL, 0, format, argcopy);
+	va_end(argcopy);
+	return(retval);
+}
+
 #endif
 
 
 #ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
+template<typename T>
+T max(const T &a, const T &b)
+{
+	return(a > b ? a : b);
+}
+// #define max(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 #ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
+template<typename T>
+T min(const T &a, const T &b)
+{
+	return(a < b ? a : b);
+}
+//#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #if defined(_WINDOWS)
 #define dbg_break _asm { int 3 }
 #else
 #define dbg_break asm("int $3");
+#endif
+
+#if !defined(_WINDOWS)
+#define Sleep(x) usleep(x * 1000)
+
+#define _beginthread(ptr, stackSize, arg) pthread_t ptr__thr; pthread_create(&ptr__thr, NULL, [](void*a)->void*{ptr(a); return(NULL);}, arg); pthread_detach(ptr__thr)
+
 #endif
 
 #define DECLARE_CLASS(cls, basecls)		\
@@ -137,12 +173,12 @@ inline const char* strcasestr(const char *haystack, const char *needle)
 
 
 #if defined(_MSC_VER)
-#	define XALIGNED(x) __declspec(align(x))
+#	define XALIGNED(type, x) __declspec(align(x)) type
 #	define XDEPRECATED __declspec(deprecated) 
 #	define XMETHODCALLTYPE __stdcall
 #	define XINLINE __forceinline
 #elif defined(__GNUC__)
-#	define XALIGNED(x) __attribute__ ((aligned(x)))
+#	define XALIGNED(type, x) type __attribute__ ((aligned(x)))
 #	define XDEPRECATED __attribute__((deprecated)) 
 //#	define XMETHODCALLTYPE __attribute__((stdcall))
 #	define XMETHODCALLTYPE

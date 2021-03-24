@@ -29,16 +29,16 @@ private:
 #pragma warning(push)
 #pragma warning(disable:4180)
 #endif
-	template<typename T>
+	template<typename T0>
 	struct add_const_to_pointee
 	{
-		typedef T type;
+		typedef T0 type;
 	};
 
-	template <typename T>
-	struct add_const_to_pointee<T*>
+	template <typename T0>
+	struct add_const_to_pointee<T0*>
 	{
-		typedef const T* type;
+		typedef const T0* type;
 	};
 #ifdef _MSC_VER
 #pragma warning(pop)

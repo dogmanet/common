@@ -142,7 +142,7 @@ XINLINE float round_step(float x, float fStep)
 	return(x);
 }
 
-XALIGNED(16) struct SMVECTOR
+XALIGNED(struct, 16) SMVECTOR
 {
 	union
 	{
@@ -251,7 +251,7 @@ XALIGNED(16) struct SMVECTOR
 	}
 };
 
-XALIGNED(16) struct SMVECTORI32
+XALIGNED(struct, 16) SMVECTORI32
 {
 	union
 	{
@@ -290,7 +290,7 @@ XALIGNED(16) struct SMVECTORI32
 	}
 };
 
-XALIGNED(16) struct float2: public SMVECTOR
+XALIGNED(struct, 16) float2: public SMVECTOR
 {
 	float2()
 	{
@@ -345,7 +345,7 @@ XALIGNED(16) struct float2: public SMVECTOR
 #endif
 };
 
-XALIGNED(16) struct float3: public SMVECTOR
+XALIGNED(struct, 16) float3: public SMVECTOR
 {
 	float3()
 	{
@@ -411,7 +411,7 @@ XALIGNED(16) struct float3: public SMVECTOR
 #endif
 };
 
-XALIGNED(16) struct float4: public SMVECTOR
+XALIGNED(struct, 16) float4: public SMVECTOR
 {
 	float4()
 	{
@@ -622,7 +622,7 @@ XINLINE SMVECTOR & SMVECTOR::operator /= (const float & F)
 	return(*this);
 };
 
-XALIGNED(16) struct SMMATRIX
+XALIGNED(struct, 16) SMMATRIX
 {
 	union
 	{
@@ -1942,7 +1942,7 @@ public:
 	float z;
 	float w;
 
-	explicit SMQuaternion::SMQuaternion(const float3 &f)
+	explicit SMQuaternion(const float3 &f)
 	{
 		x = f.x;
 		y = f.y;
@@ -1950,7 +1950,7 @@ public:
 		w = Renormalize().w;
 	}
 
-	explicit SMQuaternion::SMQuaternion(const float4 &f)
+	explicit SMQuaternion(const float4 &f)
 	{
 		x = f.x;
 		y = f.y;
@@ -1958,7 +1958,7 @@ public:
 		w = f.w;
 	}
 
-	SMQuaternion::SMQuaternion(float x, float y, float z, float w)
+	SMQuaternion(float x, float y, float z, float w)
 	{
 		this->x = x;
 		this->y = y;
@@ -1966,7 +1966,7 @@ public:
 		this->w = w;
 	}
 
-	SMQuaternion::SMQuaternion(float angle, char ax)
+	SMQuaternion(float angle, char ax)
 	{
 		float sin_a = sinf(angle / 2.0f);
 		float cos_a = cosf(angle / 2.0f);
@@ -1991,7 +1991,7 @@ public:
 		w = q.w;
 	}
 
-	SMQuaternion::SMQuaternion(const float3 & vFrom, const float3 & vTo)
+	SMQuaternion(const float3 & vFrom, const float3 & vTo)
 	{
 		float3 u = SMVector3Normalize(vFrom);
 		float3 v = SMVector3Normalize(vTo);
@@ -2017,7 +2017,7 @@ public:
 		z = vec.z;
 	}
 
-	SMQuaternion::SMQuaternion():x(0.0f), y(0.0f), z(0.0f), w(1.0f)
+	SMQuaternion():x(0.0f), y(0.0f), z(0.0f), w(1.0f)
 	{
 	}
 
@@ -2317,7 +2317,7 @@ XINLINE float SMVector3NonSqrtLength(const float3 & V)
 }
 #endif
 
-_forceinline float Clamp01(const float &a)
+XINLINE float Clamp01(const float &a)
 {
 	if(a < 0.0f)
 	{
@@ -2432,7 +2432,7 @@ XINLINE float SMCrossLines(const float3 & pos1, const float3 & dir1,
 
 //##########################################################################
 
-XALIGNED(16) struct SMPLANE: public float4
+XALIGNED(struct, 16) SMPLANE: public float4
 {
 	SMPLANE():float4(0.0f, 1.0f, 0.0f, 0.0f)
 	{
@@ -2578,7 +2578,7 @@ XINLINE bool SMPlaneEqualEpsilon(const SMPLANE &A, const SMPLANE &B, float fEpsi
 
 //##########################################################################
 
-XALIGNED(16) struct SMAABB
+XALIGNED(struct, 16) SMAABB
 {
 	SMAABB() = default;
 	SMAABB(const float3 &vMin_, const float3 &vMax_):

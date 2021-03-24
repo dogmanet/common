@@ -9,6 +9,7 @@ See the license in LICENSE
 #include <ctype.h>
 #if defined(_LINUX) || defined(_MAC)
 #	include <wchar.h>
+#	include <wctype.h>
 #	include <stdlib.h>
 #	define wcscmpi wcscasecmp
 #	define stricmp strcasecmp
@@ -29,8 +30,6 @@ See the license in LICENSE
 #	pragma GCC diagnostic push
 #	pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
-
-#pragma once
 
 #ifndef SAFE_DELETE_A
 #define SAFE_DELETE_A(p) if(p)\
@@ -116,7 +115,7 @@ String::String(DWORD num)
 String::String(const UINT num)
 {
 	char tmp[64];
-	sprintf(tmp, "%lu", num);
+	sprintf(tmp, "%u", num);
 	m_szString = new char[strlen(tmp) + 1];
 	memcpy(m_szString, tmp, strlen(tmp) + 1);
 }
@@ -1779,7 +1778,7 @@ StringW & StringW::operator/=(const bool & bf)
 
 bool StringW::operator==(const StringW & str) const
 {
-	if(&str == this || !lstrcmpW(m_szString, str.m_szString))
+	if(&str == this || !wcscmp(m_szString, str.m_szString))
 	{
 		return(true);
 	}
