@@ -319,13 +319,6 @@ XALIGNED(struct, 16) float2: public SMVECTOR
 	}
 #endif
 
-	operator SMVECTOR()
-	{
-		SMVECTOR r;
-		r.mmv = mmv;
-		return(r);
-	};
-
 	float2 & operator=(const float2 & V)
 	{
 		mmv = V.mmv;
@@ -384,13 +377,6 @@ XALIGNED(struct, 16) float3: public SMVECTOR
 		mmv = _mm_set_ps(1.0, v.z, v.y, v.x);
 	}
 #endif
-
-	operator SMVECTOR()
-	{
-		SMVECTOR r;
-		r.mmv = mmv;
-		return(r);
-	};
 
 	float3 & operator=(const float3 & V)
 	{
@@ -458,13 +444,6 @@ XALIGNED(struct, 16) float4: public SMVECTOR
 		mmv = _mm_set_ps(v.w, v.z, v.y, v.x);
 	}
 #endif
-
-	operator SMVECTOR()
-	{
-		SMVECTOR r;
-		r.mmv = mmv;
-		return(r);
-	};
 
 	float4 & operator=(const float4 & V)
 	{
@@ -2483,12 +2462,6 @@ XALIGNED(struct, 16) SMPLANE: public float4
 	//	}
 	//#endif
 	//
-	operator SMVECTOR()
-	{
-		SMVECTOR r;
-		r.mmv = mmv;
-		return(r);
-	};
 
 	SMPLANE & operator=(const SMPLANE & V)
 	{
