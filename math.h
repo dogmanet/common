@@ -51,6 +51,7 @@ void operator delete[](void* ptr)\
 #define SM_1DIV2PI          0.159154943f
 #define SM_PIDIV2           1.570796327f
 #define SM_PIDIV4           0.785398163f
+#define SM_PIDIV180         0.017453293f
 
 #define vlerp(x,y,s) ((x) + (s)*((y) - (x)))
 #define sign(x) ((x) >= 0 ? ((x)>0 ?1 :0) : -1)
