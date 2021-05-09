@@ -140,13 +140,13 @@ T min(const T &a, const T &b)
 //#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#if defined(_WINDOWS)
+#if defined(_WIN32)
 #define dbg_break _asm { int 3 }
 #else
 #define dbg_break asm("int $3");
 #endif
 
-#if !defined(_WINDOWS)
+#if !defined(_WIN32)
 #define Sleep(x) usleep(x * 1000)
 
 #define _beginthread(ptr, stackSize, arg) pthread_t ptr__thr; pthread_create(&ptr__thr, NULL, [](void*a)->void*{ptr(a); return(NULL);}, arg); pthread_detach(ptr__thr)
