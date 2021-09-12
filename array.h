@@ -279,15 +279,21 @@ public:
 
 	void insert(const T &data, UINT index)
 	{
-		if (index >= this->size())
+		if(index >= this->size())
 		{
 			(*this)[index] = data;
 		}
 		else
 		{
-			for (int i = Size; i > index; --i)
+			bool wasRealloced = Size == AllocSize;
+			for(int i = Size; i > index; --i)
 			{
 				(*this)[i] = (*this)[i - 1];
+				if(wasRealloced)
+				{
+					wasRealloced = false;
+					(*this)[i] = (*this)[i - 1];
+				}
 			}
 			(*this)[index] = data;
 		}

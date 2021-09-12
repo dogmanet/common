@@ -59,6 +59,8 @@ void operator delete[](void* ptr)\
 #define SMToRadian(degree)((degree)*(SM_PI / 180.0f))
 #define SMToAngle(rad)((rad)*(180.0f / SM_PI))
 
+#define SMIsZero(f) (fabsf(f) < FLT_EPSILON)
+
 /*
 #ifndef max
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -2886,7 +2888,7 @@ XINLINE float SMDistancePointLine2(const float3 &p, const float3 &start, const f
 //! возвращает нормаль треугольника
 XINLINE float3 TriGetNormal(const float4 &vPointA, const float4 &vPointB, const float4 &vPointC)
 {
-	return SMVector3Normalize(SMVector3Cross(vPointC - vPointA, vPointB - vPointA));
+	return(SMVector3Normalize(SMVector3Cross(vPointC - vPointA, vPointB - vPointA)));
 }
 
 #if 0
@@ -2946,16 +2948,16 @@ XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const f
 	const float3 &l1, const float3 &l2, float3 *pvOut)
 {
 	float3 n = SMVector3Normalize(SMVector3Cross((vB - vA), (vC - vB)));
-	float d1 = SMVector3Dot((l1 - vA), n) / SMVector3Length(n);
-	float d2 = SMVector3Dot((l2 - vA), n) / SMVector3Length(n);
+	float d1 = SMVector3Dot(SMVector3Normalize(l1 - vA), n);
+	float d2 = SMVector3Dot(SMVector3Normalize(l2 - vA), n);
 
 	if((d1 > 0 && d2 > 0) || (d1 < 0 && d2 < 0))
 		return(false);
 
 	float3 vIntersectPoint = l1 + (l2 - l1) * (-d1 / (d2 - d1));
-	if(SMVector3Dot(SMVector3Cross((vB - vA), (vIntersectPoint - vA)), n) <= 0) return(false);
-	if(SMVector3Dot(SMVector3Cross((vC - vB), (vIntersectPoint - vB)), n) <= 0) return(false);
-	if(SMVector3Dot(SMVector3Cross((vA - vC), (vIntersectPoint - vC)), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vB - vA), (vIntersectPoint - vA))), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vC - vB), (vIntersectPoint - vB))), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vA - vC), (vIntersectPoint - vC))), n) <= 0) return(false);
 
 	if(pvOut)
 	{
@@ -2963,6 +2965,21 @@ XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const f
 	}
 
 	return(true);
+}
+
+XINLINE float SMRightAngleBetweenVectors(const float3 &vFrom, const float3 &vTo, const float3 &vNormal /* Must be normalized! */)
+{
+	float3 vA = SMVector3Normalize(vFrom);
+	float3 vB = SMVector3Normalize(vTo);
+
+	float fAngle = acosf(clampf(SMVector3Dot(vA, vB), -1.0f, 1.0f));
+
+	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross(vA, vB)), vNormal) < 0.0f)
+	{
+		fAngle = SM_2PI - fAngle;
+	}
+
+	return(fAngle);
 }
 
 #endif
