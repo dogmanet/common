@@ -145,6 +145,25 @@ XINLINE float round_step(float x, float fStep)
 	return(x);
 }
 
+XINLINE float safe_acosf(float fAngle)
+{
+	float fRes = acosf(fAngle);
+
+	if(std::isnan(fRes))
+	{
+		if(fAngle > 0.0f)
+		{
+			fRes = 0.0f;
+		}
+		else
+		{
+			fRes = SM_PI;
+		}
+	}
+
+	return(fRes);
+}
+
 XALIGNED(struct, 16) SMVECTOR
 {
 	union
@@ -2948,8 +2967,8 @@ XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const f
 	const float3 &l1, const float3 &l2, float3 *pvOut)
 {
 	float3 n = SMVector3Normalize(SMVector3Cross((vB - vA), (vC - vB)));
-	float d1 = SMVector3Dot(SMVector3Normalize(l1 - vA), n);
-	float d2 = SMVector3Dot(SMVector3Normalize(l2 - vA), n);
+	float d1 = SMVector3Dot(l1 - vA, n);
+	float d2 = SMVector3Dot(l2 - vA, n);
 
 	if((d1 > 0 && d2 > 0) || (d1 < 0 && d2 < 0))
 		return(false);
