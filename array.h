@@ -21,7 +21,7 @@ class s4g_Stack;
 
 #endif*/
 
-template<typename T, int BlockSize=16>
+template<typename T, int BlockSize=16, bool fully_defined=true>
 class Array
 {
 private:
@@ -445,6 +445,21 @@ protected:
 
 	UINT Size = 0;
 	UINT AllocSize = 0;
+};
+
+template<>
+class Array<char>: public Array<char, 1024, false>
+{
+public:
+	void append(const char *szString)
+	{
+		int len = (int)strlen(szString);
+		reserve(size() + len + 1);
+		for(int i = 0; i < len; ++i)
+		{
+			push_back(szString[i]);
+		}
+	}
 };
 
 
