@@ -286,7 +286,7 @@ public:
 		else
 		{
 			bool wasRealloced = Size == AllocSize;
-			for(int i = Size; i > index; --i)
+			for(UINT i = Size; i > index; --i)
 			{
 				(*this)[i] = (*this)[i - 1];
 				if(wasRealloced)
