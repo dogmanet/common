@@ -1038,7 +1038,7 @@ String String::trim()
 	UINT len = 0;
 	for(UINT i = 0, l = length(); i < l; ++i)
 	{
-		if(!isspace(m_szString[i]))
+		if(!isspace((unsigned char)m_szString[i]))
 		{
 			if(i < pos)
 			{
