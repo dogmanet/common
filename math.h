@@ -52,14 +52,14 @@ void operator delete[](void* ptr)\
 #define SM_PIDIV2           1.570796327f
 #define SM_PIDIV4           0.785398163f
 #define SM_PIDIV180         0.017453293f
+#define SM_EPSILON          FLT_EPSILON
 
 #define vlerp(x,y,s) ((x) + (s)*((y) - (x)))
 #define sign(x) ((x) >= 0 ? ((x)>0 ?1 :0) : -1)
 #define sign2(x) ((x) >= 0 ? 1 : -1)
 #define SMToRadian(degree)((degree)*(SM_PI / 180.0f))
 #define SMToAngle(rad)((rad)*(180.0f / SM_PI))
-
-#define SMIsZero(f) (fabsf(f) < FLT_EPSILON)
+#define SMIsZero(f) (fabsf(f) < SM_EPSILON)
 
 /*
 #ifndef max
@@ -2491,7 +2491,7 @@ XALIGNED(struct, 16) SMPLANE: public float4
 		return(*this);
 	};
 
-	bool intersectLine(float3 *pOut, const float3 &vStart, const float3 &vEnd)
+	bool intersectLine(float3 *pOut, const float3 &vStart, const float3 &vEnd) const
 	{
 		float3 n = SMVector3Normalize(*this);
 		// a/a + b/b + c/c = -d

@@ -171,6 +171,7 @@ T min(const T &a, const T &b)
 #	define alignof __alignof
 #endif
 
+#define fora(var, arr) for(UINT var = 0, var##l = (arr).size(); var < var##l; ++var)
 
 #if defined(_MSC_VER)
 #	define XALIGNED(type, x) __declspec(align(x)) type
