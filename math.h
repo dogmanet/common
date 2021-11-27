@@ -2991,7 +2991,7 @@ XINLINE float SMRightAngleBetweenVectors(const float3 &vFrom, const float3 &vTo,
 	float3 vA = SMVector3Normalize(vFrom);
 	float3 vB = SMVector3Normalize(vTo);
 
-	float fAngle = acosf(clampf(SMVector3Dot(vA, vB), -1.0f, 1.0f));
+	float fAngle = safe_acosf(clampf(SMVector3Dot(vA, vB), -1.0f, 1.0f));
 
 	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross(vA, vB)), vNormal) < 0.0f)
 	{
