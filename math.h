@@ -1113,6 +1113,25 @@ XINLINE float SMVector4Length(const float4 & V)
 	return(vLengthSq.x);
 }
 
+XINLINE float SMVector4Length2(const float4 & V)
+{
+	SMVECTOR vLengthSq;
+	vLengthSq.mmv = _mm_mul_ps(V, V);
+	SMVECTOR vTemp;
+	vTemp.mmv = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(3, 2, 3, 2));
+	vLengthSq.mmv = _mm_add_ps(vLengthSq, vTemp);
+
+	vLengthSq.mmv = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(1, 0, 0, 0));
+
+	vTemp.mmv = _mm_shuffle_ps(vTemp, vLengthSq, _MM_SHUFFLE(3, 3, 0, 0));
+
+	vLengthSq.mmv = _mm_add_ps(vLengthSq, vTemp);
+
+	vLengthSq.mmv = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(2, 2, 2, 2));
+
+	return(vLengthSq.x);
+}
+
 XINLINE float4 SMVector4Normalize(const float4 & V)
 {
 	static const SMVECTORI32 maskInf = {0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000};
@@ -2093,6 +2112,11 @@ public:
 				w = q[3];
 			}
 		}
+	}
+
+	XINLINE float4 toFloat4() const
+	{
+		return(float4(x, y, z, w));
 	}
 };
 XINLINE bool operator==(const SMQuaternion & q1, const SMQuaternion & q2)
