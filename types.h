@@ -315,7 +315,7 @@ inline int parse_str(char *str, char **ppOut, int iMaxSize, char delim=',')
 	int c = 0;
 	while(*str && (c < iMaxSize || !ppOut))
 	{
-		while(*str && (*str == delim || isspace(*str))){++str;}
+		while(*str && (*str == delim || isspace((byte)*str))){++str;}
 		if(ppOut)
 		{
 			ppOut[c] = str;
@@ -327,7 +327,7 @@ inline int parse_str(char *str, char **ppOut, int iMaxSize, char delim=',')
 		{
 			char *tmp = str;
 			--tmp;
-			while(isspace(*tmp))
+			while(isspace((byte)*tmp))
 			{
 				--tmp;
 			}
