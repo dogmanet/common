@@ -2517,10 +2517,11 @@ XALIGNED(struct, 16) SMPLANE: public float4
 
 	bool intersectLine(float3 *pOut, const float3 &vStart, const float3 &vEnd) const
 	{
-		float3 n = SMVector3Normalize(*this);
+		//float3 n = SMVector3Normalize(*this);
+		float3 n = *this;
 		// a/a + b/b + c/c = -d
 		// z = -d / c
-		float3 t1 = n * -w;
+		float3 t1 = n * (-w / SMVector3Dot(n, n));
 		float d1 = SMVector3Dot((vStart - t1), n),
 			d2 = SMVector3Dot((vEnd - t1), n);
 		if((d1 > 0 && d2 > 0) || (d1 < 0 && d2 < 0))
@@ -2990,7 +2991,7 @@ XINLINE bool SMRayIntersectAABB(const SMAABB &aabb, const float3 &vRayOrigin, co
 XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const float3 &vC,
 	const float3 &l1, const float3 &l2, float3 *pvOut)
 {
-	float3 n = SMVector3Normalize(SMVector3Cross((vB - vA), (vC - vB)));
+	float3 n = SMVector3Cross((vB - vA), (vC - vB));
 	float d1 = SMVector3Dot(l1 - vA, n);
 	float d2 = SMVector3Dot(l2 - vA, n);
 
@@ -2998,9 +2999,9 @@ XINLINE bool SMTriangleIntersectLine(const float3 &vA, const float3 &vB, const f
 		return(false);
 
 	float3 vIntersectPoint = l1 + (l2 - l1) * (-d1 / (d2 - d1));
-	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vB - vA), (vIntersectPoint - vA))), n) <= 0) return(false);
-	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vC - vB), (vIntersectPoint - vB))), n) <= 0) return(false);
-	if(SMVector3Dot(SMVector3Normalize(SMVector3Cross((vA - vC), (vIntersectPoint - vC))), n) <= 0) return(false);
+	if(SMVector3Dot(SMVector3Cross((vB - vA), (vIntersectPoint - vA)), n) <= 0.0f) return(false);
+	if(SMVector3Dot(SMVector3Cross((vC - vB), (vIntersectPoint - vB)), n) <= 0.0f) return(false);
+	if(SMVector3Dot(SMVector3Cross((vA - vC), (vIntersectPoint - vC)), n) <= 0.0f) return(false);
 
 	if(pvOut)
 	{
