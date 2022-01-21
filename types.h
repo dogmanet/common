@@ -179,14 +179,20 @@ T min(const T &a, const T &b)
 #	define XDEPRECATED __declspec(deprecated) 
 #	define XMETHODCALLTYPE __stdcall
 #	define XINLINE __forceinline
+#	define __XMETHOD__ __FUNCTION__
 #elif defined(__GNUC__)
 #	define XALIGNED(type, x) type __attribute__ ((aligned(x)))
 #	define XDEPRECATED __attribute__((deprecated)) 
 //#	define XMETHODCALLTYPE __attribute__((stdcall))
 #	define XMETHODCALLTYPE
 #	define XINLINE inline __attribute__((always_inline))
+#	define __XMETHOD__ __PRETTY_FUNCTION__
 #else
 #	error "unsupported compiler"
+#endif
+
+#ifndef __XMETHOD__
+#	define __XMETHOD__ __func__
 #endif
 
 class IXUnknown
