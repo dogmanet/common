@@ -88,8 +88,9 @@ XINLINE float randf(float lowBound, float highBound)
 {
 	if (lowBound >= highBound)
 		return lowBound;
-
-	float f = (rand() % 10000) * 0.0001f;
+	
+	//float f = (rand() % 10000) * 0.0001f;
+	float f = (float)rand() / (float)RAND_MAX;
 
 	return lerpf(lowBound, highBound, f);// (f * (highBound - lowBound)) + lowBound;
 }
@@ -114,31 +115,31 @@ XINLINE float saturatef(float x)
 	return clampf(x, 0.f, 1.f);
 }
 
-XINLINE float round_step(float x, float fStep)
+XINLINE double round_step(double x, double dStep)
 {
-	float fHalfStep = fStep * 0.5f;
+	double dHalfStep = dStep * 0.5;
 
-	float fFrac = fmodf(x, fStep);
-	if(fFrac >= 0.0f)
+	double dFrac = fmod(x, dStep);
+	if(dFrac >= 0.0f)
 	{
-		if(fFrac > fHalfStep)
+		if(dFrac > dHalfStep)
 		{
-			x += fStep - fFrac;
+			x += dStep - dFrac;
 		}
 		else
 		{
-			x -= fFrac;
+			x -= dFrac;
 		}
 	}
 	else
 	{
-		if(fFrac < -fHalfStep)
+		if(dFrac < -dHalfStep)
 		{
-			x -= fStep + fFrac;
+			x -= dStep + dFrac;
 		}
 		else
 		{
-			x -= fFrac;
+			x -= dFrac;
 		}
 	}
 
@@ -177,10 +178,8 @@ XALIGNED(struct, 16) SMVECTOR
 			float w;
 		};
 	};
-
-
+	
 	SX_ALIGNED_OP_MEM();
-
 
 	/*void* operator new(size_t size)
 	{
@@ -226,21 +225,52 @@ XALIGNED(struct, 16) SMVECTOR
 		return(*this);
 	};
 
-	float & operator[](const int& key)
+	float operator[](int key) const
 	{
-			if(key == 0)
-				return this->x;
-			else if(key == 1)
-				return this->y;
-			else if(key == 2)
-				return this->z;
-			else if(key == 3)
-				return this->w;
+		if(key == 0)
+		{
+			return(x);
+		}
+		else if(key == 1)
+		{
+			return(y);
+		}
+		else if(key == 2)
+		{
+			return(z);
+		}
+		else if(key == 3)
+		{
+			return(w);
+		}
+
+		assert(key >= 0 && key < 4);
+		return(0.0f);
+	}
+
+	float& operator[](int key)
+	{
+		if(key == 0)
+		{
+			return(x);
+		}
+		else if(key == 1)
+		{
+			return(y);
+		}
+		else if(key == 2)
+		{
+			return(z);
+		}
+		else if(key == 3)
+		{
+			return(w);
+		}
 
 		assert(key >= 0 && key < 4);
 		static float err;
 		return(err);
-	};
+	}
 
 	SMVECTOR & operator*=(const float & F);
 
@@ -251,22 +281,12 @@ XALIGNED(struct, 16) SMVECTOR
 		return(mmv);
 	}
 
-	operator __m128*()
-	{
-		return(&mmv);
-	}
-
 	operator const __m128&() const
 	{
 		return(mmv);
 	}
 
-	operator const __m128*() const
-	{
-		return(&mmv);
-	}
-
-	bool operator==(const SMVECTOR & other)
+	bool operator==(const SMVECTOR &other) const
 	{
 		return(_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) == 0xF);
 		//return(mmv.m128_u64[0] == other.mmv.m128_u64[0] && mmv.m128_u64[1] == other.mmv.m128_u64[1]);
@@ -296,19 +316,9 @@ XALIGNED(struct, 16) SMVECTORI32
 		return(v.mmv);
 	}
 
-	operator __m128*()
-	{
-		return(&v.mmv);
-	}
-
 	operator const __m128&() const
 	{
 		return(v.mmv);
-	}
-
-	operator const __m128*() const
-	{
-		return(&v.mmv);
 	}
 };
 
@@ -347,7 +357,7 @@ XALIGNED(struct, 16) float2: public SMVECTOR
 		return(*this);
 	};
 
-	bool operator==(const float2 &other)
+	bool operator==(const float2 &other) const
 	{
 		return((_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) & 0x3) == 0x3);
 	}
@@ -406,7 +416,7 @@ XALIGNED(struct, 16) float3: public SMVECTOR
 		return(*this);
 	};
 
-	bool operator==(const float3 &other)
+	bool operator==(const float3 &other) const
 	{
 		return((_mm_movemask_ps(_mm_cmpeq_ps(mmv, other.mmv)) & 0x7) == 0x7);
 	}
@@ -494,7 +504,11 @@ struct float2_t
 	{
 	}
 
-	float2_t(const float2 & f):x(f.x), y(f.y)
+	float2_t(const float2 &f):x(f.x), y(f.y)
+	{
+	}
+
+	float2_t(const SMVECTOR &f):x(f.x), y(f.y)
 	{
 	}
 
@@ -518,7 +532,11 @@ struct float3_t
 	{
 	}
 
-	float3_t(const float3 & f):x(f.x), y(f.y), z(f.z)
+	float3_t(const float3 &f):x(f.x), y(f.y), z(f.z)
+	{
+	}
+
+	float3_t(const SMVECTOR &f):x(f.x), y(f.y), z(f.z)
 	{
 	}
 
@@ -543,7 +561,11 @@ struct float4_t
 	{
 	}
 
-	float4_t(const float4 & f) : float4_t(f.x, f.y, f.z, f.w)
+	float4_t(const float4 &f): float4_t(f.x, f.y, f.z, f.w)
+	{
+	}
+
+	float4_t(const SMVECTOR &f): float4_t(f.x, f.y, f.z, f.w)
 	{
 	}
 
@@ -3024,6 +3046,26 @@ XINLINE float SMRightAngleBetweenVectors(const float3 &vFrom, const float3 &vTo,
 	}
 
 	return(fAngle);
+}
+
+// случайный вектор по единичной сфере
+XINLINE float3_t randv()
+{
+	float fThetha = randf(0.0f, SM_2PI);
+	float fPhi = safe_acosf(randf(-1.0f, 1.0f));
+	return(float3_t(cosf(fThetha) * sinf(fPhi), cosf(fPhi), sinf(fThetha) * sinf(fPhi)));
+}
+
+XINLINE float SMFloatPingPong(float fTime, float fLength)
+{
+	int iLoops = (int)(fTime / fLength);
+	fTime -= fLength * (float)iLoops;
+	if(iLoops % 2 == 1)
+	{
+		fTime = fLength - fTime;
+	}
+
+	return(fTime);
 }
 
 #endif
