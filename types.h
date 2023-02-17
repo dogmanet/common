@@ -174,6 +174,27 @@ T min(const T &a, const T &b)
 #define fora(var, arr) for(UINT var = 0, var##l = (arr).size(); var < var##l; ++var)
 #define forar(var, arr) for(int var = (arr).size() - 1; var >= 0; --var)
 
+
+#define XMETHOD_2CONST(type, name, ...) virtual type XMETHODCALLTYPE name(__VA_ARGS__) = 0; \
+	virtual const type XMETHODCALLTYPE name(__VA_ARGS__) const = 0;
+
+#define XMETHOD_GETSET(name, type, varname) virtual void XMETHODCALLTYPE set##name(type varname) = 0; \
+	virtual type XMETHODCALLTYPE get##name() const = 0;
+
+#define XMETHOD_GETSET_REF(name, type, varname) virtual void XMETHODCALLTYPE set##name(const type &varname) = 0; \
+	virtual type XMETHODCALLTYPE get##name() const = 0;
+
+
+
+#define XMETHOD_GETSET_IMPL(name, type, varname, fieldname) void XMETHODCALLTYPE set##name(type varname) override{fieldname = varname;} \
+	type XMETHODCALLTYPE get##name() const override{return(fieldname);}
+
+#define XMETHOD_GETSET_REF_IMPL(name, type, varname, fieldname) void XMETHODCALLTYPE set##name(const type &varname) override{fieldname = varname;} \
+	type XMETHODCALLTYPE get##name() const override{return(fieldname);}
+
+#define XMETHOD_2CONST_IMPL(type, name, varname) type XMETHODCALLTYPE name() override{return(varname);} \
+	const type XMETHODCALLTYPE name() const  override{return(varname);};
+
 #if defined(_MSC_VER)
 #	define XALIGNED(type, x) __declspec(align(x)) type
 #	define XDEPRECATED __declspec(deprecated) 
