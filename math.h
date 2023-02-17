@@ -9,6 +9,7 @@ See the license in LICENSE
 
 #include <xmmintrin.h>
 #include <math.h>
+#include <cmath>
 #include <cstdlib>
 #include <assert.h>
 #include <float.h>
@@ -2947,6 +2948,88 @@ XINLINE float SMDistancePointLine2(const float3 &p, const float3 &start, const f
 	float b = c1 / c2;
 	float3 Pb = start + b * v;
 	return(SMVector3Length2(p - Pb));
+}
+
+//##########################################################################
+
+struct transform_t;
+XALIGNED(struct, 16) SMTransform
+{
+	SMQuaternion qRot;
+	float3 vPos;
+
+	SMTransform() = default;
+	SMTransform(const float3 &vPos, const SMQuaternion &qRot);
+	SMTransform(const transform_t &other);
+	explicit SMTransform(const SMQuaternion &qRot);
+	explicit SMTransform(const float3 &vPos);
+
+	SMTransform& operator*=(const SMTransform &b);
+	SMTransform& operator+=(const float3 &b);
+};
+
+struct transform_t
+{
+	SMQuaternion qRot;
+	float3_t vPos;
+
+	transform_t() = default;
+	transform_t(const float3_t &vPos, const SMQuaternion &qRot);
+	transform_t(const SMTransform &other);
+};
+
+XINLINE transform_t::transform_t(const float3_t &vPos, const SMQuaternion &qRot):
+	qRot(qRot),
+	vPos(vPos)
+{}
+XINLINE transform_t::transform_t(const SMTransform &other)
+{
+	vPos = other.vPos;
+	qRot = other.qRot;
+}
+
+XINLINE SMTransform::SMTransform(const float3 &vPos, const SMQuaternion &qRot):
+	qRot(qRot),
+	vPos(vPos)
+{}
+XINLINE SMTransform::SMTransform(const transform_t &other)
+{
+	vPos = other.vPos;
+	qRot = other.qRot;
+}
+XINLINE SMTransform::SMTransform(const SMQuaternion &qRot):
+	qRot(qRot)
+{}
+XINLINE SMTransform::SMTransform(const float3 &vPos):
+	vPos(vPos)
+{}
+
+XINLINE SMTransform operator*(const SMTransform &a, const SMTransform &b)
+{
+	SMTransform res = a;
+	res *= b;
+	return(res);
+}
+XINLINE float3 operator*(const SMTransform &a, const float3 &b)
+{
+	return(a.qRot * b + a.vPos);
+}
+XINLINE SMTransform operator+(const SMTransform &a, const float3 &b)
+{
+	SMTransform res = a;
+	res += b;
+	return(res);
+}
+
+XINLINE SMTransform& SMTransform::operator*=(const SMTransform &b)
+{
+	vPos = b.qRot * vPos + b.vPos;
+	qRot = qRot * b.qRot;
+}	    
+XINLINE SMTransform& SMTransform::operator+=(const float3 &b)
+{
+	vPos += b;
+	return(*this);
 }
 
 //##########################################################################
