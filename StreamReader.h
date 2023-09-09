@@ -74,7 +74,7 @@ public:
 	{
 		if(iBufSize > m_uBufSize - m_uBufPos)
 		{
-			iBufSize = m_uBufSize - m_uBufPos;
+			iBufSize = (UINT)(m_uBufSize - m_uBufPos);
 		}
 
 		strncpy(pBuf, (const char*)&(m_pBuf[m_uBufPos]), iBufSize);
