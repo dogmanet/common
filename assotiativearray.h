@@ -267,7 +267,8 @@ private:
 		node->IsBlack = true;
 	}
 
-	Node* TreeInsert(const SX_KEYTYPE &key, bool *found = NULL)
+	template<typename... Args>
+	Node* TreeInsert(const SX_KEYTYPE &key, bool *found, Args&&... args)
 	{
 		Node * tmpCur;
 		Node * tmpParent;
@@ -301,7 +302,7 @@ private:
 		}
 		tmpNode->Key = key;
 		//tmpNode->Val = new SX_VALTYPE;
-		tmpNode->Val = this->MemVals.Alloc();
+		tmpNode->Val = this->MemVals.Alloc(args...);
 		//tmpNode->Val = AllocVal();
 		//*tmpNode->Val = val;
 		//memcpy(tmpNode->Val, &val, sizeof(SX_VALTYPE));
@@ -980,6 +981,12 @@ public:
 		}
 		return(TmpNode != NULL && found);
 	}
+	template<typename... Args>
+	const Node* insert(const SX_KEYTYPE &key, Args&&... args)
+	{
+		TmpNode = TreeInsert(key, NULL, args...);
+		return(TmpNode);
+	}
 
 	AssotiativeArray & operator=(const AssotiativeArray & a)
 	{
@@ -1005,7 +1012,7 @@ public:
 		if(!TmpNode)
 		{
 			//SX_VALTYPE tmpVal = {0};
-			TmpNode = TreeInsert(key);
+			TmpNode = TreeInsert(key, NULL);
 		}
 		return(*TmpNode->Val);
 	}

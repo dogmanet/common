@@ -248,7 +248,7 @@ public:
 		Size = 0;
 		AllocSize = 0;
 		Data = NULL;
-		Alloc();
+		//Alloc();
 	}
 
 	void clearFast()
@@ -300,16 +300,18 @@ public:
 	}
 
 	template <typename L>
-	void insert(const T &data, const L &CompareFunc = [](const L &a, const L &b){return(a < b); })
+	UINT insert(const T &data, const L &CompareFunc = [](const L &a, const L &b){return(a < b); })
 	{
 		this->push_back(data);
 		int item = size() - 2;
-		while (item >= 0 && CompareFunc(this->Data[item], data))
+		while(item >= 0 && CompareFunc(this->Data[item], data))
 		{
 			this->Data[item + 1] = this->Data[item];
 			this->Data[item] = data;
 			--item;
 		}
+
+		return(item + 1);
 	}
 
 	template <typename L>
