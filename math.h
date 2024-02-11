@@ -3025,6 +3025,7 @@ XINLINE SMTransform& SMTransform::operator*=(const SMTransform &b)
 {
 	vPos = b.qRot * vPos + b.vPos;
 	qRot = qRot * b.qRot;
+	return(*this);
 }	    
 XINLINE SMTransform& SMTransform::operator+=(const float3 &b)
 {
