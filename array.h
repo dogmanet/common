@@ -123,7 +123,10 @@ public:
 
 	void reserve(UINT size)
 	{
-		Realloc(size);
+		if(AllocSize < size)
+		{
+			Realloc(size);
+		}
 	}
 
 	UINT size() const
@@ -195,6 +198,7 @@ public:
 
 	T& operator[](int _key)
 	{
+		assert(_key >= 0);
 		UINT key = (UINT)_key;
 		if(key >= this->Size)
 		{
@@ -344,8 +348,8 @@ public:
 		return(-1);
 	}
 
-	template<typename O>
-	void append(const Array<O> &other)
+	template<typename O, int S = BlockSize>
+	void append(const Array<O, S> &other)
 	{
 		reserve(size() + other.size());
 

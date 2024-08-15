@@ -28,6 +28,10 @@ See the license in LICENSE
 #include <pthread.h>
 #endif
 
+#ifdef __KOS__
+#include <unistd.h>
+#endif
+
 #include "enum_flags.h"
 
 using std::mutex;
@@ -147,7 +151,12 @@ T min(const T &a, const T &b)
 #endif
 
 #if !defined(_WIN32)
+
+#ifdef __KOS__
+#define Sleep(x) KosThreadSleep(x)
+#else
 #define Sleep(x) usleep(x * 1000)
+#endif
 
 #define _beginthread(ptr, stackSize, arg) pthread_t ptr__thr; pthread_create(&ptr__thr, NULL, [](void*a)->void*{ptr(a); return(NULL);}, arg); pthread_detach(ptr__thr)
 
@@ -169,6 +178,23 @@ T min(const T &a, const T &b)
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
 #	define alignof __alignof
+#endif
+
+#if defined(__KOS__)
+static inline void* memalign(size_t alignment, size_t size)
+{
+	if(alignment < sizeof(void*))
+	{
+		return(malloc(size));
+	}
+	void *pOut = NULL;
+	if(posix_memalign(&pOut, alignment, size) == 0)
+	{
+		return(pOut);
+	}
+	
+	return(NULL);
+}
 #endif
 
 #define fora(var, arr) for(UINT var = 0, var##l = (arr).size(); var < var##l; ++var)
