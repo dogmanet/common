@@ -2137,6 +2137,46 @@ public:
 		}
 	}
 
+	// From basis
+	SMQuaternion(const float3_t &a, const float3_t &b, const float3_t &c)
+	{
+		float T = a.x + b.y + c.z;
+		float s;
+		if(T > 0)
+		{
+			float s = sqrt(T + 1) * 2.f;
+			x = (c.y - b.z) / s;
+			y = (a.z - c.x) / s;
+			z = (b.x - a.y) / s;
+			w = 0.25f * s;
+		}
+		else if(a.x > b.y && a.x > c.z)
+		{
+			s = sqrt(1 + a.x - b.y - c.z) * 2;
+			x = 0.25f * s;
+			y = (b.x + a.y) / s;
+			z = (a.z + c.x) / s;
+			w = (c.y - b.z) / s;
+		}
+		else if(b.y > c.z)
+		{
+			s = sqrt(1 + b.y - a.x - c.z) * 2;
+			x = (b.x + a.y) / s;
+			y = 0.25f * s;
+			z = (c.y + b.z) / s;
+			w = (b.z - c.y) / s;
+		}
+		else
+		{
+			s = sqrt(1 + c.z - a.x - b.y) * 2;
+			x = (a.z + c.x) / s;
+			y = (c.y + b.z) / s;
+			z = 0.25f * s;
+			w = (b.x - a.y) / s;
+		}
+	}
+
+
 	XINLINE float4 toFloat4() const
 	{
 		return(float4(x, y, z, w));
