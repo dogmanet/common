@@ -25,9 +25,4 @@
       <UniqueIdentifier>{4fc24143-1cdd-4c6a-8ecd-ec4bc9bb1276}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\string.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-  </ItemGroup>
 </Project>

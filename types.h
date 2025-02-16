@@ -72,6 +72,7 @@ typedef uint32_t UINT_PTR;
 
 #ifdef _MSC_VER
 #	define strcasecmp _stricmp
+#	define wcscasecmp _wcsicmp
 
 inline const char* strcasestr(const char *haystack, const char *needle)
 {
