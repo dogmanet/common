@@ -12,14 +12,15 @@ See the license in LICENSE
 #include <stdint.h>
 #include <cstring>
 #include <cwchar>
-#include <gdefines.h>
-//#include "MB2WC.h"
 #include "types.h"
 
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <Windows.h>
+#	define snprintf _snprintf
 #endif
+
+#include "MB2WC.h"
 
 #if defined(_LINUX) || defined(_MAC)
 #	include <wchar.h>
@@ -28,6 +29,10 @@ See the license in LICENSE
 #	define wcscmpi wcscasecmp
 #	define stricmp strcasecmp
 #endif
+
+#pragma warning(push)
+#pragma warning(disable:4996)
+#pragma warning(disable:4522)
 
 static char* xstrcat(char *dest, const char *source)
 {
@@ -218,14 +223,12 @@ public:
 
 	StringBase(int64_t num)
 	{
-		xsprintf(m_data.stack.szStr, "%lld", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		initFormat("%lld", num);
 	}
 
 	StringBase(uint64_t num)
 	{
-		xsprintf(m_data.stack.szStr, "%llu", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		initFormat("%llu", num);
 	}
 
 	StringBase(UINT num)
@@ -236,14 +239,12 @@ public:
 
 	StringBase(double num)
 	{
-		xsprintf(m_data.stack.szStr, "%f", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		initFormat("%g", num);
 	}
 
 	StringBase(float num)
 	{
-		xsprintf(m_data.stack.szStr, "%f", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		initFormat("%g", num);
 	}
 
 	explicit StringBase(bool bf)
@@ -260,11 +261,6 @@ public:
 	StringBase(Derived &&other)
 	{
 		*this = std::move(other);
-	}
-
-	StringBase(const Derived *ptr)
-	{
-		*this = ptr;
 	}
 
 	~StringBase()
@@ -296,7 +292,7 @@ public:
 
 		size = length() + xstrlen(str);
 
-		if(size + 1 > sizeof(result.m_data.stack.szStr))
+		if(size + 1 > getStackSize())
 		{
 			result.m_isStack = false;
 			result.m_data.heap.capacity = calcCapacity(size);
@@ -461,16 +457,6 @@ public:
 	Derived &operator=(bool bf)
 	{
 		*this = Derived(bf);
-
-		return(*(Derived*)this);
-	}
-
-	Derived &operator=(const Derived *ptr)
-	{
-		if(ptr)
-		{
-			*this = *ptr;
-		}
 
 		return(*(Derived*)this);
 	}
@@ -1000,31 +986,41 @@ public:
 
 	T& operator[](size_t index)
 	{
-		//assert
+		assert(index <= length());
 		return(m_isStack ? m_data.stack.szStr[index] : m_data.heap.szStr[index]);
 	}
 
 	const T& operator[](size_t index) const
 	{
-		//assert
+		assert(index <= length());
 		return(m_isStack ? m_data.stack.szStr[index] : m_data.heap.szStr[index]);
 	}
-
-	// Найти все места где используется reserve
 
 	size_t length() const
 	{
 		return(m_isStack ? m_data.stack.size : m_data.heap.size);
 	}
 
-	void insert(unsigned int pos, const T *data)
+	void insert(size_t pos, const T *data)
 	{
+		size_t dataLen = xstrlen(data);
+		size_t newLen = length() + dataLen;
 
+		T *szTmp = (T*)_malloca(sizeof(T) * (newLen + 1));
+	
+		xmemcpy(szTmp, c_str(), pos);
+		szTmp[pos] = 0;
+		xstrcat(szTmp, data);
+		xstrcat(szTmp, c_str() + pos);
+
+		*this = szTmp;
+
+		_freea(szTmp);
 	}
 
-	void insert(unsigned int pos, const Derived &data)
+	void insert(size_t pos, const Derived &data)
 	{
-
+		insert(pos, data.c_str());
 	}
 
 	size_t find(T c, size_t pos = 0) const
@@ -1249,7 +1245,7 @@ public:
 
 		if(m_isStack)
 		{
-			m_data.stack.size = len;
+			m_data.stack.size = (byte)len;
 			m_data.stack.szStr[len] = 0;
 		}
 		else
@@ -1292,14 +1288,14 @@ public:
 	double toDouble() const
 	{
 		double out = 0;
-		xsscanf(c_str(), "%lf", &out);
+		xsscanf(c_str(), "%g", &out);
 		return(out);
 	}
 
 	float toFloat() const
 	{
 		float out = 0;
-		xsscanf(c_str(), "%f", &out);
+		xsscanf(c_str(), "%g", &out);
 		return(out);
 	}
 
@@ -1329,8 +1325,6 @@ public:
 		return(out);
 	}
 
-	//	operator StringBaseW() const;
-
 	size_t capacity() const
 	{
 		return(m_isStack ? getStackSize() : m_data.heap.capacity);
@@ -1344,9 +1338,30 @@ public:
 	static const size_t EOS = -1;
 
 private:
+	template <typename Type>
+	void initFormat(const char *szFormat, Type arg)
+	{
+		size_t len = snprintf(NULL, 0, szFormat, arg);
+		T *szDest = NULL;
+
+		if(len + 1 <= getStackSize())
+		{
+			szDest = m_data.stack.szStr;
+			m_data.stack.size = (byte)len;
+		}
+		else
+		{
+			szDest = m_data.heap.szStr;
+			appendReserve(len + 1);
+			m_data.heap.size = len;
+		}
+
+		xsprintf(szDest, szFormat, arg);
+	}
+
 	int getStackSize() const
 	{
-		return(sizeof(m_data.heap) / sizeof(T));
+		return(ARRAYSIZE(m_data.stack.szStr));
 	}
 
 	size_t calcCapacity(size_t len) const
@@ -1354,10 +1369,9 @@ private:
 		return(len + (len % 2 ? (len - 1) / 2 : (len / 2)));
 	}
 
-	bool m_isStack = true;
-
 	union
 	{
+#pragma pack(push, 1)
 		struct Heap
 		{
 			size_t capacity;
@@ -1367,10 +1381,12 @@ private:
 
 		struct
 		{
+			T szStr[(sizeof(Heap) - 1) / sizeof(T)];
 			byte size;
-			T szStr[sizeof(Heap) / sizeof(T)];
 		}stack;
+#pragma pack(pop)
 	} m_data;
+	bool m_isStack = true;
 };
 
 class String: public StringBase<char, String>
@@ -1440,18 +1456,12 @@ public:
 	{
 	}
 
-	String(const String *ptr):
-		StringBase(ptr)
+	String& operator=(const String &str)
 	{
+		return(StringBase::operator=(str));
 	}
 
-	//String& operator=(const char *str)
-	//{
-	//	return(StringBase::operator=(str));
-	//}
-
 	inline operator StringW() const;
-
 };
 
 class StringW: public StringBase<wchar_t, StringW>
@@ -1481,7 +1491,7 @@ public:
 	{
 	}
 
-	StringW(char sym):
+	StringW(wchar_t sym):
 		StringBase(sym)
 	{
 	}
@@ -1522,15 +1532,10 @@ public:
 	{
 	}
 
-	StringW(const StringW *ptr):
-		StringBase(ptr)
+	StringW& operator=(const StringW &str)
 	{
+		return(StringBase::operator=(str));
 	}
-
-	//StringW& operator=(const wchar_t *str)
-	//{
-	//	return(StringBase::operator=(str));
-	//}
 
 	inline operator String() const;
 };
@@ -1543,7 +1548,7 @@ inline String::operator StringW() const
 	result.resize(len);
 
 #if defined(_WIN32)
-	MultiByteToWideChar(CP_UTF8, 0, c_str(), len, &result[0], len);
+	MultiByteToWideChar(CP_UTF8, 0, c_str(), (int)len, &result[0], (int)len);
 #else
 	mbstowcs(&result[0], c_str(), len);
 #endif
@@ -1558,7 +1563,7 @@ inline StringW::operator String() const
 #if defined(_WIN32)
 	size_t size = WideCharToMultiByte(CP_UTF8, 0, c_str(), -1, NULL, 0, NULL, NULL);
 	result.resize(size);
-	WideCharToMultiByte(CP_UTF8, 0, c_str(), length() + 1, &result[0], size, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, c_str(), (int)(length() + 1), &result[0], (int)size, NULL, NULL);
 #else
 	size_t len = length() + 1;
 	result.resize(size);
@@ -1567,5 +1572,7 @@ inline StringW::operator String() const
 
 	return result;
 }
+
+#pragma warning(pop)
 
 #endif
