@@ -26,8 +26,6 @@ See the license in LICENSE
 #	include <wchar.h>
 #	include <wctype.h>
 #	include <stdlib.h>
-#	define wcscmpi wcscasecmp
-#	define stricmp strcasecmp
 #endif
 
 #pragma warning(push)
@@ -146,12 +144,12 @@ static const wchar_t* xmemcpy(wchar_t *dest, const wchar_t *source, size_t len)
 
 static int xstricmp(const char *left, const char *right)
 {
-	return(_stricmp(left, right));
+	return(strcasecmp(left, right));
 }
 
 static int xstricmp(const wchar_t *left, const char *right)
 {
-	return(_wcsicmp(left, CMB2WC(right)));
+	return(wcscasecmp(left, CMB2WC(right)));
 }
 
 template <typename... T>
@@ -211,14 +209,15 @@ public:
 
 	StringBase(T sym)
 	{
-		xsprintf(m_data.stack.szStr, "%c", sym);
+		m_data.stack.szStr[0] = sym;
+		m_data.stack.szStr[1] = 0;
+
 		m_data.stack.size = 1;
 	}
 
 	StringBase(int num)
 	{
-		xsprintf(m_data.stack.szStr, "%d", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%d", num);
 	}
 
 	StringBase(int64_t num)
@@ -233,8 +232,7 @@ public:
 
 	StringBase(UINT num)
 	{
-		xsprintf(m_data.stack.szStr, "%u", num);
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%u", num);
 	}
 
 	StringBase(double num)
@@ -249,8 +247,7 @@ public:
 
 	explicit StringBase(bool bf)
 	{
-		xsprintf(m_data.stack.szStr, "%s", (bf ? "true" : "false"));
-		m_data.stack.size = (byte)xstrlen(m_data.stack.szStr);
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%s", (bf ? "true" : "false"));
 	}
 
 	StringBase(const Derived &str)
@@ -875,7 +872,19 @@ public:
 
 	bool operator==(const Derived &str) const
 	{
-		return(*this == str.c_str());
+		if(this != &str)
+		{
+			if(length() != str.length())
+			{
+				return(xstrcmp(c_str(), str.c_str()) == 0);
+			}
+		}
+		else
+		{
+			return(true);
+		}
+
+		return(false);
 	}
 
 	bool operator==(const T *str) const
@@ -891,6 +900,7 @@ public:
 		{
 			return(true);
 		}
+
 		return(false);
 	}
 
@@ -1027,7 +1037,7 @@ public:
 	{
 		const T *chr = xstrchr(c_str() + pos, c);
 
-		return(chr ? (size_t)(chr - c_str()) : -1);
+		return(chr ? (size_t)(chr - c_str()) : EOS);
 	}
 
 	size_t find(const T *str, size_t pos = 0) const
@@ -1053,7 +1063,7 @@ public:
 			++it;
 		}
 
-		return(res ? (size_t)(res - c_str()) : -1);
+		return(res ? (size_t)(res - c_str()) : EOS);
 	}
 
 	size_t find_last_of(const T *str, size_t pos = 0) const
@@ -1067,7 +1077,7 @@ public:
 			it += xstrlen(str);
 		}
 
-		return(res ? (size_t)(res - c_str()) : -1);
+		return(res ? (size_t)(res - c_str()) : EOS);
 	}
 
 	size_t find_last_of(const Derived &str, size_t pos = 0) const
@@ -1153,9 +1163,14 @@ public:
 		return(replaceAll(str.c_str(), replace.c_str()));
 	}
 
-	Derived substr(size_t pos, size_t lenght = 0) const
+	Derived substr(size_t pos, size_t length = EOS) const
 	{
 		if(pos >= length())
+		{
+			return(Derived());
+		}
+
+		if(length == 0)
 		{
 			return(Derived());
 		}
@@ -1163,15 +1178,15 @@ public:
 		Derived result;
 		const T *it = c_str() + pos;
 
-		if(lenght == 0 || lenght > length() - pos)
+		if(length == EOS || length > length() - pos)
 		{
-			lenght = length() - pos;
+			length = length() - pos;
 		}
 
-		T *str = (T*)_malloca(sizeof(T) * (lenght + 1));
+		T *str = (T*)_malloca(sizeof(T) * (length + 1));
 
-		xstrncpy(str, it, lenght);
-		str[lenght] = 0;
+		xstrncpy(str, it, length);
+		str[length] = 0;
 
 		result = str;
 
@@ -1180,36 +1195,36 @@ public:
 		return(result);
 	}
 
-	size_t remove(size_t pos, size_t lenght)
+	size_t remove(size_t pos, size_t length)
 	{
 		size_t len = length();
 
-		if(pos >= len || lenght == 0)
+		if(pos >= len || length == 0)
 		{
 			return(0);
 		}
 
-		if(lenght > len - pos)
+		if(length > len - pos)
 		{
-			lenght = len - pos;
+			length = len - pos;
 		}
 
 		T *str = m_isStack ? m_data.stack.szStr : m_data.heap.szStr;
 		T *it = str + pos;
-		size_t count = len - (it - str) - lenght;
+		size_t count = len - (it - str) - length;
 
-		xmemmove(it, it + lenght, count + 1);
+		xmemmove(it, it + length, count + 1);
 
 		if(m_isStack)
 		{
-			m_data.stack.size -= lenght;
+			m_data.stack.size -= length;
 		}
 		else
 		{
-			m_data.heap.size -= lenght;
+			m_data.heap.size -= length;
 		}
 
-		return(lenght);
+		return(length);
 	}
 
 	Derived trim()
@@ -1304,7 +1319,7 @@ public:
 		return(xstricmp(c_str(), "true") == 0 || toInt() == 1);
 	}
 
-	uint64_t toULL() const
+	uint64_t toUInt64() const
 	{
 		uint64_t out = 0;
 		xsscanf(c_str(), "%llu", &out);
@@ -1550,10 +1565,11 @@ inline String::operator StringW() const
 #if defined(_WIN32)
 	MultiByteToWideChar(CP_UTF8, 0, c_str(), (int)len, &result[0], (int)len);
 #else
+	TODO("CHECK THIS");
 	mbstowcs(&result[0], c_str(), len);
 #endif
 
-	return result;
+	return(result);
 }
 
 inline StringW::operator String() const
@@ -1561,16 +1577,17 @@ inline StringW::operator String() const
 	String result;
 
 #if defined(_WIN32)
-	size_t size = WideCharToMultiByte(CP_UTF8, 0, c_str(), -1, NULL, 0, NULL, NULL);
+	size_t size = WideCharToMultiByte(CP_UTF8, 0, c_str(), (int)(length() + 1), NULL, 0, NULL, NULL);
 	result.resize(size);
 	WideCharToMultiByte(CP_UTF8, 0, c_str(), (int)(length() + 1), &result[0], (int)size, NULL, NULL);
 #else
+	TODO("CHECK THIS");
 	size_t len = length() + 1;
 	result.resize(size);
 	mbstowcs(&result[0], c_str(), len);
 #endif
 
-	return result;
+	return(result);
 }
 
 #pragma warning(pop)
