@@ -255,13 +255,13 @@ XDEPRECATED bool FileCreateDir(const char *szPath)
 	}
 
 	String sPath = FileAppendSlash(FileCanonizePathS(szPath).c_str());
-	int iPosSlash = 0;
-	int iOldPos = 0;
+	size_t sizePosSlash = 0;
+	size_t sizeOldPos = 0;
 
-	while ((iPosSlash = sPath.find("/", iOldPos)) >= 0)
+	while((sizePosSlash = sPath.find("/", sizeOldPos)) != String::EOS)
 	{
-		String sDir = sPath.substr(0, iPosSlash);
-		iOldPos = iPosSlash + 1;
+		String sDir = sPath.substr(0, sizePosSlash);
+		sizeOldPos = sizePosSlash + 1;
 		if (sDir.length() > 0 && !FileExistsDir(sDir.c_str()))
 		{
 			if (!CreateDirectory(sDir.c_str(), 0))

@@ -4,418 +4,1592 @@ Copyright © Vitaliy Buturlin, Evgeny Danilovich, 2017
 See the license in LICENSE
 ******************************************************/
 
-#ifndef String_H
-#define String_H
+#ifndef __STRING_H
+#define __STRING_H
 
-#include <string.h>
 #define _NO_GTK
 
-#if !defined(_WINNT_)
-typedef wchar_t WCHAR;
-typedef unsigned long DWORD;
-typedef unsigned short WORD;
-typedef unsigned int UINT;
+#include <stdint.h>
+#include <cstring>
+#include <cwchar>
+#include "types.h"
+
+#ifdef _WIN32
+#	define WIN32_LEAN_AND_MEAN
+#	include <Windows.h>
+#	define snprintf _snprintf
 #endif
 
-//##########################################################################
+#include "MB2WC.h"
 
+#if defined(_LINUX) || defined(_MAC)
+#	include <wchar.h>
+#	include <wctype.h>
+#	include <stdlib.h>
+#endif
+
+#pragma warning(push)
+#pragma warning(disable:4996)
+#pragma warning(disable:4522)
+
+static char* xstrcat(char *dest, const char *source)
+{
+	return(strcat(dest, source));
+}
+
+static wchar_t* xstrcat(wchar_t *dest, const wchar_t *source)
+{
+	return(wcscat(dest, source));
+}
+
+static void* xmemmove(char *dest, const char *source, size_t len)
+{
+	return(memmove(dest, source, len));
+}
+
+static void* xmemmove(wchar_t *dest, const wchar_t *source, size_t len)
+{
+	return(wmemmove(dest, source, len));
+}
+
+static char* xstrcpy(char *dest, const char *source)
+{
+	return(strcpy(dest, source));
+}
+
+static wchar_t* xstrcpy(wchar_t *dest, const wchar_t *source)
+{
+	return(wcscpy(dest, source));
+}
+
+static char* xstrncpy(char *dest, const char *source, size_t len)
+{
+	return(strncpy(dest, source, len));
+}
+
+static wchar_t* xstrncpy(wchar_t *dest, const wchar_t *source, size_t len)
+{
+	return(wcsncpy(dest, source, len));
+}
+
+static size_t xstrlen(const char *str)
+{
+	return(strlen(str));
+}
+
+static size_t xstrlen(const wchar_t *str)
+{
+	return(wcslen(str));
+}
+
+static int xstrcmp(const char *left, const char *right)
+{
+	return(strcmp(left, right));
+}
+
+static int xstrcmp(const wchar_t *left, const wchar_t *right)
+{
+	return(wcscmp(left, right));
+}
+
+static char* xstrstr(char *str, const char *substr)
+{
+	return(strstr(str, substr));
+}
+
+static wchar_t* xstrstr(wchar_t *str, const wchar_t *substr)
+{
+	return(wcsstr(str, substr));
+}
+
+static const char* xstrstr(const char *str, const char *substr)
+{
+	return(strstr(str, substr));
+}
+
+static const wchar_t* xstrstr(const wchar_t *str, const wchar_t *substr)
+{
+	return(wcsstr(str, substr));
+}
+
+static int xisspace(char sym)
+{
+	return(isspace((unsigned char)sym));
+}
+
+static int xisspace(wchar_t sym)
+{
+	return(iswspace(sym));
+}
+
+static const char* xstrchr(const char *str, char sym)
+{
+	return(strchr(str, sym));
+}
+
+static const wchar_t* xstrchr(const wchar_t *str, wchar_t sym)
+{
+	return(wcschr(str, sym));
+}
+
+static void* xmemcpy(char *dest, const char *source, size_t len)
+{
+	return(memcpy(dest, source, len));
+}
+
+static const wchar_t* xmemcpy(wchar_t *dest, const wchar_t *source, size_t len)
+{
+	return(wmemcpy(dest, source, len));
+}
+
+static int xstricmp(const char *left, const char *right)
+{
+	return(strcasecmp(left, right));
+}
+
+static int xstricmp(const wchar_t *left, const char *right)
+{
+	return(wcscasecmp(left, CMB2WC(right)));
+}
+
+template <typename... T>
+static int xsprintf(char *dest, const char* format, T... args)
+{
+	return(sprintf(dest, format, args...));
+}
+
+template <typename... T>
+static int xsprintf(wchar_t *dest, const char* format, T... args)
+{
+	return(swprintf(dest, CMB2WC(format), args...));
+}
+
+template <typename... T>
+static int xsscanf(const char *source, const char* format, T... args)
+{
+	return(sscanf(source, format, args...));
+}
+
+template <typename... T>
+static int xsscanf(const wchar_t *source, const char* format, T... args)
+{
+	return(swscanf(source, CMB2WC(format), args...));
+}
+
+class String;
 class StringW;
 
-class String
+template <typename T, typename Derived>
+class StringBase
 {
 public:
-	friend class StringW;
-	String();
-	String(const char *	str);
-	String(const char *	str, int iCount);
-	String(const char		sym);
-	String(const int		num);
-	String(const unsigned short		num);
-	String(const unsigned long	num);
-	String(const UINT num);
-	String(const long		num);
-	String(const double	num);
-	explicit String(bool bf);
-	String(const String & str);
-	String(const String * str);
+	StringBase()
+	{
+		m_data.stack.size = 0;
+		m_data.stack.szStr[0] = 0;
+	}
 
-	String(String && other);
+	StringBase(const T *str)
+	{
+		size_t len = xstrlen(str);
+		if(len + 1 <= getStackSize())
+		{
+			xstrcpy(m_data.stack.szStr, str);
+			m_data.stack.size = (byte)len;
+		}
+		else
+		{
+			m_isStack = false;
+			m_data.heap.capacity = calcCapacity(len);
+			m_data.heap.size = len;
+			m_data.heap.szStr = new T[capacity()];
+			xstrcpy(m_data.heap.szStr, str);
+		}
+	}
 
-	~String();
+	StringBase(T sym)
+	{
+		m_data.stack.szStr[0] = sym;
+		m_data.stack.szStr[1] = 0;
 
-	void release();
+		m_data.stack.size = 1;
+	}
 
-	////////////////////////////////////
-	//операции сложения строк
-	//возвращается образуется новый объект String 
-	//который и содержит результат сложения строк
+	StringBase(int num)
+	{
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%d", num);
+	}
 
-	String operator+(const String & str) const;
+	StringBase(int64_t num)
+	{
+		initFormat("%lld", num);
+	}
 
-	String operator+(const char *	str);
-	String operator+(const char &	sym);
-	String operator+(const int &	num);
-	String operator+(const unsigned short &	num);
-	String operator+(const unsigned long &num);
-	String operator+(const long &	num);
-	String operator+(const double &num);
-	String operator+(const bool &	bf);
+	StringBase(uint64_t num)
+	{
+		initFormat("%llu", num);
+	}
 
-	////////////////////////////////////
-	//операции присваивания
+	StringBase(UINT num)
+	{
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%u", num);
+	}
 
-	String & operator=(const String & str);
+	StringBase(double num)
+	{
+		initFormat("%g", num);
+	}
 
-	String & operator=(const char *	str);
-	String & operator=(const char &	sym);
-	String & operator=(const int &	num);
-	String & operator=(const unsigned short &	num);
-	String & operator=(const unsigned long &	num);
-	String & operator=(const long &	num);
-	String & operator=(const double &	num);
-	String & operator=(const bool &	bf);
+	StringBase(float num)
+	{
+		initFormat("%g", num);
+	}
 
-	String & operator=(String && other);
+	explicit StringBase(bool bf)
+	{
+		m_data.stack.size = (byte)xsprintf(m_data.stack.szStr, "%s", (bf ? "true" : "false"));
+	}
 
-	////////////////////////////////////
-	//операции сложения строк объекта к которому применяется сложение и слагаемого
-	String & operator+=(const String &str);
+	StringBase(const Derived &str)
+	{
+		*this = str;
+	}
 
-	String & operator+=(const char *	str);
-	String & operator+=(const char &	sym);
-	String & operator+=(const int &	num);
-	String & operator+=(const unsigned short &	num);
-	String & operator+=(const unsigned long &	num);
-	String & operator+=(const long &	num);
-	String & operator+=(const double &num);
-	String & operator+=(const bool &	bf);
+	StringBase(Derived &&other)
+	{
+		*this = std::move(other);
+	}
 
-	////////////////////////////////////
-	//искоючить первое нахождение из строки
-	//возвращается новый объект String, который содержит результат
-	String operator-(const String & str);
+	~StringBase()
+	{
+		release();
+	}
 
-	String operator-(const char *	str);
-	String operator-(const char &	sym);
-	String operator-(const int &	num);
-	String operator-(const unsigned short &	num);
-	String operator-(const unsigned long &	num);
-	String operator-(const long &	num);
-	String operator-(const double &	num);
-	String operator-(const bool &	bf);
+	void release()
+	{
+		if(!m_isStack)
+		{
+			mem_delete_a(m_data.heap.szStr);
+			m_data.heap.capacity = 0;
+			m_isStack = true;
+		}
+	}
 
-	////////////////////////////////////
-	//исключает первое нахождение из данного объекта
-	String & operator-=(const String &str);
+	Derived operator+(const Derived &str) const
+	{
+		return(*this + str.c_str());
+	}
 
-	String & operator-=(const char *	str);
-	String & operator-=(const char &	sym);
-	String & operator-=(const int &	num);
-	String & operator-=(const unsigned short &	num);
-	String & operator-=(const unsigned long &	num);
-	String & operator-=(const long &	num);
-	String & operator-=(const double &num);
-	String & operator-=(const bool &	bf);
+	Derived operator+(const T *str) const
+	{
+		Derived result;
+		size_t size = 0;
+		const T *szLeft = NULL;
+		const T *szRight = NULL;
 
-	//////////////////////////////////////
-	//исключить все похожие нахождения
-	//возвращается новый объект String
-	String operator / (const String &str);
+		size = length() + xstrlen(str);
 
-	String operator/(const char *	str);
-	String operator/(const char &	sym);
-	String operator/(const int &	num);
-	String operator/(const unsigned short &	num);
-	String operator/(const unsigned long &	num);
-	String operator/(const long &	num);
-	String operator/(const double &	num);
-	String operator/(const bool &	bf);
+		if(size + 1 > getStackSize())
+		{
+			result.m_isStack = false;
+			result.m_data.heap.capacity = calcCapacity(size);
+			result.m_data.heap.size = size;
+			result.m_data.heap.szStr = new T[result.capacity()];
 
-	////////////////////////////////////
-	//исключить все похожие нахождения
-	String & operator/=(const String &str);
+			xstrcpy(result.m_data.heap.szStr, c_str());
+			xstrcat(result.m_data.heap.szStr, str);
 
-	String & operator/=(const char *	str);
-	String & operator/=(const char &	sym);
-	String & operator/=(const int &	num);
-	String & operator/=(const unsigned short &	num);
-	String & operator/=(const unsigned long &	num);
-	String & operator/=(const long &	num);
-	String & operator/=(const double &num);
-	String & operator/=(const bool &	bf);
+			return(result);
+		}
 
-	////////////////////////////////////
+		result.m_data.stack.size = (byte)size;
+		xstrcpy(result.m_data.stack.szStr, c_str());
+		xstrcat(result.m_data.stack.szStr, str);
 
-	bool operator==(const String &str) const;
+		return(result);
+	}
 
-	bool operator==(const char *	str) const;
-	bool operator==(const char &	sym) const;
-	bool operator==(const int &		num) const;
-	bool operator==(const unsigned short &	num) const;
-	bool operator==(const unsigned long &	num) const;
-	bool operator==(const long &	num) const;
-	bool operator==(const double &	num) const;
-	bool operator==(const bool &	bf) const;
+	Derived operator+(T sym) const
+	{
+		return(*this + Derived(sym));
+	}
 
-	//////////////////////////////////////
+	Derived operator+(int num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	bool operator!= (const String &str) const;
+	Derived operator+(int64_t num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	bool operator!=(const char *	str) const;
-	bool operator!=(const char &	sym) const;
-	bool operator!=(const int &		num) const;
-	bool operator!=(const unsigned short &	num) const;
-	bool operator!=(const unsigned long &	num) const;
-	bool operator!=(const long &	num) const;
-	bool operator!=(const double &	num) const;
-	bool operator!=(const bool &	bf) const;
+	Derived operator+(uint64_t num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	//////////////////////////////////////
-	char & operator[](const unsigned long & num);
-	const char & operator[](const unsigned long & num) const;
-	//////////////////////////////////////
+	Derived operator+(UINT num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	unsigned long length() const;
-	unsigned long find(const char & c, unsigned long pos = 0) const;
-	unsigned long find(const char * str, unsigned long pos = 0) const;
-	unsigned long find(const String & str, unsigned long pos = 0) const;
+	Derived operator+(double num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	unsigned long find_last_of(const char & c, unsigned long pos = 0) const;
-	unsigned long find_last_of(const char * str, unsigned long pos = 0) const;
-	unsigned long find_last_of(const String & str, unsigned long pos = 0) const;
+	Derived operator+(float num) const
+	{
+		return(*this + Derived(num));
+	}
 
-	unsigned long replace(const char * str, const char * replace, unsigned long pos);
-	unsigned long replace(const String & str, const String & replace, unsigned long pos);
+	Derived operator+(bool bf) const
+	{
+		return(*this + Derived(bf));
+	}
 
-	unsigned long replaceAll(const char * str, const char * replace);
-	unsigned long replaceAll(const String & str, const String & replace);
+	Derived &operator=(const Derived &str)
+	{
+		*this = str.c_str();
 
-	//char * SubStr(unsigned long pos, unsigned long lenght); // ��� ������ �� �����
-	String substr(unsigned long pos, unsigned long lenght = 0) const;
-	unsigned int remove(unsigned long pos, unsigned long lenght);
+		return(*(Derived*)this);
+	}
 
-	String trim();
+	Derived &operator=(Derived &&other)
+	{
+		if(this != &other)
+		{
+			std::swap(m_data, other.m_data);
+			std::swap(m_isStack, other.m_isStack);
+		}
 
-	const char * c_str() const;
+		return(*(Derived*)this);
+	}
 
-	void reserve(int length);
-	void appendReserve(int length);
+	Derived &operator=(const T *str)
+	{
+		if(c_str() != str)
+		{
+			T *dest = NULL;
+			size_t len = xstrlen(str);
 
-	int		toInt() const;
-	long	toLongInt() const;
-	unsigned long	toUnsLongInt() const;
-	double	toDouble() const;
-	bool	toBool() const;
+			if((m_isStack && len + 1 > getStackSize()) ||
+				(capacity() <= len))
+			{
+				release();
 
-	operator StringW() const;
+				m_isStack = false;
+				m_data.heap.capacity = calcCapacity(len);
+				m_data.heap.size = len;
+				m_data.heap.szStr = new T[capacity()];
+				dest = m_data.heap.szStr;
+			}
+			else if(!m_isStack && capacity() >= len + 1)
+			{
+				m_data.heap.size = len;
+				dest = m_data.heap.szStr;
+			}
+			else
+			{
+				m_data.stack.size = (byte)len;
+				dest = m_data.stack.szStr;
+			}
 
-	bool operator<(const String & s) const;
+			xstrcpy(dest, str);
+		}
 
-protected:
-	char * m_szString = NULL;
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(T sym)
+	{
+		*this = Derived(sym);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(int num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(int64_t num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(uint64_t num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(UINT num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(double num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(float num)
+	{
+		*this = Derived(num);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator=(bool bf)
+	{
+		*this = Derived(bf);
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator+=(const Derived &str)
+	{
+		return(*this += str.c_str());
+	}
+
+	Derived &operator+=(const T *str)
+	{
+		bool selfPlus = c_str() == str;
+		size_t len = xstrlen(str) + length();
+
+		if(m_isStack && len + 1 <= getStackSize())
+		{
+			if(selfPlus)
+			{
+				xmemcpy(m_data.stack.szStr + length(), m_data.stack.szStr, length());
+				m_data.stack.szStr[len] = 0;
+			}
+			else
+			{
+				xstrcat(m_data.stack.szStr, str);
+			}
+
+			m_data.stack.size = (byte)len;
+
+			return(*(Derived*)this);
+		}
+		else if(!m_isStack && m_data.heap.capacity >= len + 1)
+		{
+			if(selfPlus)
+			{
+				xmemcpy(m_data.heap.szStr + length(), m_data.heap.szStr, length());
+				m_data.stack.szStr[len] = 0;
+			}
+			else
+			{
+				xstrcat(m_data.heap.szStr, str);
+			}
+
+			m_data.heap.size = len;
+
+			return(*(Derived*)this);
+		}
+
+		size_t capacity = calcCapacity(len);
+		T *szBuff = new T[capacity];
+		xsprintf(szBuff, "%s%s", c_str(), str);
+
+		release();
+
+		m_isStack = false;
+		m_data.heap.szStr = szBuff;
+		m_data.heap.capacity = capacity;
+		m_data.heap.size = len;
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator+=(T sym)
+	{
+		return(*this += Derived(sym));
+	}
+
+	Derived &operator+=(int num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(int64_t num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(uint64_t num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(UINT num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(double num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(float num)
+	{
+		return(*this += Derived(num));
+	}
+
+	Derived &operator+=(bool bf)
+	{
+		return(*this += Derived(bf));
+	}
+
+	Derived operator-(const Derived &str) const
+	{
+		return(*this - str.c_str());
+	}
+
+	Derived operator-(const T *str) const
+	{
+		if(length() > 0)
+		{
+			const T *pos = xstrstr(c_str(), str);
+			T *szBuf = NULL;
+
+			if(!pos)
+			{
+				return(*(Derived*)this);
+			}
+
+			Derived result;
+			size_t strlen = xstrlen(str);
+			size_t len = length() - strlen;
+			size_t count = pos - c_str();
+
+			if(len + 1 <= getStackSize())
+			{
+				result.m_data.stack.size = (byte)len;
+				szBuf = result.m_data.stack.szStr;
+
+				return(result);
+			}
+			else
+			{
+				result.m_isStack = false;
+				result.m_data.heap.capacity = calcCapacity(len);
+				result.m_data.heap.size = len;
+				result.m_data.heap.szStr = new T[result.capacity()];
+
+				szBuf = result.m_data.heap.szStr;
+			}
+
+
+			xstrncpy(szBuf, c_str(), count);
+			szBuf[count] = 0;
+			xstrcat(szBuf, pos + strlen);
+
+			return(result);
+		}
+
+		return(*(Derived*)this);
+	}
+
+	Derived operator-(T sym) const
+	{
+		return(*this - Derived(sym));
+	}
+
+	Derived operator-(int num) const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(int64_t num) const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(uint64_t num) const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(UINT num) const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(double num)const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(float num)const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived operator-(bool bf) const
+	{
+		return(*this - Derived(num));
+	}
+
+	Derived &operator-=(const Derived &str)
+	{
+		return(*this -= str.c_str());
+	}
+
+	Derived &operator-=(const T *str)
+	{
+		if(length() > 0)
+		{
+			size_t len = xstrlen(str);
+			T *szData = m_isStack ? m_data.stack.szStr : m_data.heap.szStr;
+			T *pos = xstrstr(szData, str);
+			size_t size = length() - (pos - szData) - len;
+
+			if(!pos)
+			{
+				return(*(Derived*)this);
+			}
+
+			if(m_isStack)
+			{
+				m_data.stack.size -= (byte)len;
+			}
+			else
+			{
+				m_data.heap.size -= len;
+			}
+
+			xmemmove(pos, pos + len, size + 1);
+		}
+		return(*(Derived*)this);
+	}
+
+	Derived &operator-=(T sym)
+	{
+		return(*this -= Derived(sym));
+	}
+
+	Derived &operator-=(int num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(int64_t num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(uint64_t num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(UINT num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(double num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(float num)
+	{
+		return(*this -= Derived(num));
+	}
+
+	Derived &operator-=(bool bf)
+	{
+		return(*this -= Derived(bf));
+	}
+
+	Derived operator/(const Derived &str) const
+	{
+		return(*this / str.c_str());
+	}
+
+	Derived operator/(const T *str) const
+	{
+		size_t len = length();
+		Derived result;
+
+		if(len > 0)
+		{
+			T *szData = (T*)_malloca(sizeof(T) * (len + 1));
+			xstrcpy(szData, c_str());
+
+			T *pos = xstrstr(szData, str);
+			size_t delLen = xstrlen(str);
+			size_t size = 0;
+
+			while(pos)
+			{
+				size = len - (pos - szData) - delLen;
+				len = len - delLen;
+				xmemmove(pos, pos + delLen, size + 1);
+				pos = xstrstr(szData, str);
+			}
+
+			result = szData;
+			_freea(szData);
+		}
+
+		return(result);
+	}
+
+	Derived operator/(T sym) const
+	{
+		return(*this / Derived(sym));
+	}
+
+	Derived operator/(int num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(int64_t num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(uint64_t num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(UINT num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(double num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(float num) const
+	{
+		return(*this / Derived(num));
+	}
+
+	Derived operator/(bool bf) const
+	{
+		return(*this / Derived(bf));
+	}
+
+	Derived &operator/=(const Derived &str)
+	{
+		return(*this /= str.c_str());
+	}
+
+	Derived &operator/=(const T *str)
+	{
+		size_t len = length();
+
+		if(len > 0)
+		{
+			T *szData = m_isStack ? m_data.stack.szStr : m_data.heap.szStr;
+
+			T *pos = xstrstr(szData, str);
+			size_t delLen = xstrlen(str);
+			size_t size = 0;
+
+			while(len > 0 && pos)
+			{
+				size = len - (pos - szData) - delLen;
+				len = len - delLen;
+				xmemmove(pos, pos + delLen, size + 1);
+				pos = xstrstr(pos, str);
+			}
+
+			if(m_isStack)
+			{
+				m_data.stack.size = (byte)len;
+			}
+			else
+			{
+				m_data.heap.size = len;
+			}
+		}
+
+		return(*(Derived*)this);
+	}
+
+	Derived &operator/=(T sym)
+	{
+		return(*this /= Derived(sym));
+	}
+
+	Derived &operator/=(int num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(int64_t num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(uint64_t num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(UINT num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(double num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(float num)
+	{
+		return(*this /= Derived(num));
+	}
+
+	Derived &operator/=(bool bf)
+	{
+		return(*this /= Derived(bf));
+	}
+
+	bool operator==(const Derived &str) const
+	{
+		if(this != &str)
+		{
+			if(length() != str.length())
+			{
+				return(xstrcmp(c_str(), str.c_str()) == 0);
+			}
+		}
+		else
+		{
+			return(true);
+		}
+
+		return(false);
+	}
+
+	bool operator==(const T *str) const
+	{
+		if(c_str() != str)
+		{
+			if(length() == xstrlen(str))
+			{
+				return(xstrcmp(c_str(), str) == 0);
+			}
+		}
+		else
+		{
+			return(true);
+		}
+
+		return(false);
+	}
+
+	bool operator==(T sym) const
+	{
+		return(*this == Derived(sym));
+	}
+
+	bool operator==(int num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(int64_t num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(uint64_t num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(UINT num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(double num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(float num) const
+	{
+		return(*this == Derived(num));
+	}
+
+	bool operator==(bool bf) const
+	{
+		return(*this == Derived(bf));
+	}
+
+	bool operator!=(const Derived &str) const
+	{
+		return(!(*this == Derived(str)));
+	}
+
+	bool operator!=(const T *str) const
+	{
+		return(!(*this == Derived(str)));
+	}
+
+	bool operator!=(T sym) const
+	{
+		return(!(*this == Derived(sym)));
+	}
+
+	bool operator!=(int num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(int64_t num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(uint64_t num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(UINT num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(double num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(float num) const
+	{
+		return(!(*this == Derived(num)));
+	}
+
+	bool operator!=(bool bf) const
+	{
+		return(!(*this == Derived(bf)));
+	}
+
+	T& operator[](size_t index)
+	{
+		assert(index <= length());
+		return(m_isStack ? m_data.stack.szStr[index] : m_data.heap.szStr[index]);
+	}
+
+	const T& operator[](size_t index) const
+	{
+		assert(index <= length());
+		return(m_isStack ? m_data.stack.szStr[index] : m_data.heap.szStr[index]);
+	}
+
+	size_t length() const
+	{
+		return(m_isStack ? m_data.stack.size : m_data.heap.size);
+	}
+
+	void insert(size_t pos, const T *data)
+	{
+		size_t dataLen = xstrlen(data);
+		size_t newLen = length() + dataLen;
+
+		T *szTmp = (T*)_malloca(sizeof(T) * (newLen + 1));
+	
+		xmemcpy(szTmp, c_str(), pos);
+		szTmp[pos] = 0;
+		xstrcat(szTmp, data);
+		xstrcat(szTmp, c_str() + pos);
+
+		*this = szTmp;
+
+		_freea(szTmp);
+	}
+
+	void insert(size_t pos, const Derived &data)
+	{
+		insert(pos, data.c_str());
+	}
+
+	size_t find(T c, size_t pos = 0) const
+	{
+		const T *chr = xstrchr(c_str() + pos, c);
+
+		return(chr ? (size_t)(chr - c_str()) : EOS);
+	}
+
+	size_t find(const T *str, size_t pos = 0) const
+	{
+		const T *it = xstrstr(c_str() + pos, str);
+
+		return(it ? (size_t)(it - c_str()) : -1);
+	}
+
+	size_t find(const Derived& str, size_t pos = 0) const
+	{
+		return(find(str.c_str(), pos));
+	}
+
+	size_t find_last_of(T c, size_t pos = 0) const
+	{
+		const T *it = c_str() + pos;
+		const T *res = NULL;
+
+		while((it = xstrchr(it, c)))
+		{
+			res = it;
+			++it;
+		}
+
+		return(res ? (size_t)(res - c_str()) : EOS);
+	}
+
+	size_t find_last_of(const T *str, size_t pos = 0) const
+	{
+		const T *it = c_str() + pos;
+		const T *res = NULL;
+
+		while((it = xstrstr(it, str)))
+		{
+			res = it;
+			it += xstrlen(str);
+		}
+
+		return(res ? (size_t)(res - c_str()) : EOS);
+	}
+
+	size_t find_last_of(const Derived &str, size_t pos = 0) const
+	{
+		return(find_last_of(str.c_str(), pos));
+	}
+
+	size_t replace(const T *str, const T *replace, size_t pos)
+	{
+		const size_t res = find(str, pos);
+
+		if(res != EOS)
+		{
+			size_t len = xstrlen(str);
+			size_t replaceLen = xstrlen(replace);
+			size_t newLen = length() - len + replaceLen;
+
+			const T *data = c_str();
+			T *buff = (T*)_malloca(sizeof(T) * (newLen + 1));
+
+			xstrncpy(buff, data, res);
+			buff[res] = 0;
+			xstrcat(buff, replace);
+			xstrcat(buff, data + res + len);
+
+			*this = buff;
+
+			_freea(buff);
+
+			return(res);
+		}
+
+		return(EOS);
+	}
+
+	size_t replace(const Derived &str, const Derived &replace, size_t pos)
+	{
+		return(StringBase::replace(str.c_str(), replace.c_str(), pos));
+	}
+
+	size_t replaceAll(const T *str, const T *replace)
+	{
+		size_t len = xstrlen(str);
+		size_t replaceLen = xstrlen(replace);
+		size_t result = 0;
+		size_t pos = 0;
+		const T *it = c_str();
+
+		while((it = xstrstr(it, str)))
+		{
+			++result;
+			it += len;
+		}
+
+		if(result != 0)
+		{
+			if(len < replaceLen)
+			{
+				size_t size = result * (replaceLen - len);
+				size_t capacity = calcCapacity(size);
+				T *szStr = new T[capacity];
+				xstrcpy(szStr, c_str());
+
+				release();
+
+				m_isStack = false;
+				m_data.heap.capacity = capacity;
+				m_data.heap.size = size;
+				m_data.heap.szStr = szStr;
+			}
+		}
+
+		do{
+			pos = StringBase::replace(str, replace, pos);
+		}
+		while(pos != EOS);
+
+		return(result);
+	}
+
+	size_t replaceAll(const Derived &str, const Derived &replace)
+	{
+		return(replaceAll(str.c_str(), replace.c_str()));
+	}
+
+	Derived substr(size_t pos, size_t length = EOS) const
+	{
+		if(pos >= length())
+		{
+			return(Derived());
+		}
+
+		if(length == 0)
+		{
+			return(Derived());
+		}
+
+		Derived result;
+		const T *it = c_str() + pos;
+
+		if(length == EOS || length > length() - pos)
+		{
+			length = length() - pos;
+		}
+
+		T *str = (T*)_malloca(sizeof(T) * (length + 1));
+
+		xstrncpy(str, it, length);
+		str[length] = 0;
+
+		result = str;
+
+		_freea(str);
+
+		return(result);
+	}
+
+	size_t remove(size_t pos, size_t length)
+	{
+		size_t len = length();
+
+		if(pos >= len || length == 0)
+		{
+			return(0);
+		}
+
+		if(length > len - pos)
+		{
+			length = len - pos;
+		}
+
+		T *str = m_isStack ? m_data.stack.szStr : m_data.heap.szStr;
+		T *it = str + pos;
+		size_t count = len - (it - str) - length;
+
+		xmemmove(it, it + length, count + 1);
+
+		if(m_isStack)
+		{
+			m_data.stack.size -= length;
+		}
+		else
+		{
+			m_data.heap.size -= length;
+		}
+
+		return(length);
+	}
+
+	Derived trim()
+	{
+		UINT pos = length();
+		UINT len = 0;
+		const T *ch = c_str();
+		for(UINT i = 0, l = length(); i < l; ++i)
+		{
+			if(!xisspace(ch[i]))
+			{
+				if(i < pos)
+				{
+					pos = i;
+				}
+				len = i - pos + 1;
+			}
+		}
+		return(substr(pos, len));
+	}
+
+	const T* c_str() const
+	{
+		return(m_isStack ? m_data.stack.szStr : m_data.heap.szStr);
+	}
+
+	void resize(size_t len)
+	{
+		if(len > capacity())
+		{
+			appendReserve(len - length());
+		}
+
+		if(m_isStack)
+		{
+			m_data.stack.size = (byte)len;
+			m_data.stack.szStr[len] = 0;
+		}
+		else
+		{
+			m_data.heap.size = len;
+			m_data.heap.szStr[len] = 0;
+		}
+	}
+
+	void appendReserve(size_t len)
+	{
+		size_t newLen = len + length();
+		if((m_isStack && newLen > getStackSize()) ||
+			(!m_isStack && newLen > m_data.heap.capacity))
+		{
+			size_t size = length();
+			T *cpy = (T*)_malloca(sizeof(T) * (size + 1));
+			xstrcpy(cpy, c_str());
+
+			release();
+
+			m_isStack = false;
+			m_data.heap.capacity = calcCapacity(newLen);
+			m_data.heap.size = size;
+			m_data.heap.szStr = new T[capacity()];
+
+			xstrcpy(m_data.heap.szStr, cpy);
+
+			_freea(cpy);
+		}
+	}
+
+	int	toInt() const
+	{
+		int out = 0;
+		xsscanf(c_str(), "%d", &out);
+		return(out);
+	}
+
+	double toDouble() const
+	{
+		double out = 0;
+		xsscanf(c_str(), "%g", &out);
+		return(out);
+	}
+
+	float toFloat() const
+	{
+		float out = 0;
+		xsscanf(c_str(), "%g", &out);
+		return(out);
+	}
+
+	bool toBool() const
+	{
+		return(xstricmp(c_str(), "true") == 0 || toInt() == 1);
+	}
+
+	uint64_t toUInt64() const
+	{
+		uint64_t out = 0;
+		xsscanf(c_str(), "%llu", &out);
+		return(out);
+	}
+
+	UINT toUInt() const
+	{
+		UINT out = 0;
+		xsscanf(c_str(), "%u", &out);
+		return(out);
+	}
+
+	int64_t toInt64() const
+	{
+		int64_t out = 0;
+		xsscanf(c_str(), "%lld", &out);
+		return(out);
+	}
+
+	size_t capacity() const
+	{
+		return(m_isStack ? getStackSize() : m_data.heap.capacity);
+	}
+
+	bool operator<(const Derived &str) const
+	{
+		return(xstrcmp(c_str(), str.c_str()) < 0);
+	}
+
+	static const size_t EOS = -1;
+
+private:
+	template <typename Type>
+	void initFormat(const char *szFormat, Type arg)
+	{
+		size_t len = snprintf(NULL, 0, szFormat, arg);
+		T *szDest = NULL;
+
+		if(len + 1 <= getStackSize())
+		{
+			szDest = m_data.stack.szStr;
+			m_data.stack.size = (byte)len;
+		}
+		else
+		{
+			szDest = m_data.heap.szStr;
+			appendReserve(len + 1);
+			m_data.heap.size = len;
+		}
+
+		xsprintf(szDest, szFormat, arg);
+	}
+
+	int getStackSize() const
+	{
+		return(ARRAYSIZE(m_data.stack.szStr));
+	}
+
+	size_t calcCapacity(size_t len) const
+	{
+		return(len + (len % 2 ? (len - 1) / 2 : (len / 2)));
+	}
+
+	union
+	{
+#pragma pack(push, 1)
+		struct Heap
+		{
+			size_t capacity;
+			size_t size;
+			T *szStr;
+		} heap;
+
+		struct
+		{
+			T szStr[(sizeof(Heap) - 1) / sizeof(T)];
+			byte size;
+		}stack;
+#pragma pack(pop)
+	} m_data;
+	bool m_isStack = true;
 };
 
-//bool operator<(const String & a, const String & b);
-
-
-
-class StringW
+class String: public StringBase<char, String>
 {
 public:
-	friend class String;
-	StringW();
-	StringW(const WCHAR *	str);
-	StringW(const WCHAR		sym);
-	StringW(const int		num);
-	StringW(const unsigned short		num);
-	StringW(const unsigned long	num);
-	StringW(const long		num);
-	StringW(const double	num);
-	explicit StringW(bool bf);
-	StringW(const StringW & str);
-	StringW(const StringW * str);
 
-	StringW(StringW && other);
+	using StringBase::operator=;
+	using StringBase::operator+;
+	using StringBase::operator+=;
+	using StringBase::operator-=;
+	using StringBase::operator-;
+	using StringBase::operator/;
+	using StringBase::operator/=;
 
-	~StringW();
+	String():
+		StringBase()
+	{
+	}
 
-	void release();
+	String(const char *str):
+		StringBase(str)
+	{
+	}
 
-	////////////////////////////////////
-	//операции сложения строк
-	//возвращается образуется новый объект StringW 
-	//который и содержит результат сложения строк
+	String(char sym):
+		StringBase(sym)
+	{
+	}
 
-	StringW operator+(const StringW & str) const;
+	String(int num):
+		StringBase(num)
+	{
+	}
 
-	StringW operator+(const WCHAR *	str);
-	StringW operator+(const WCHAR &	sym);
-	StringW operator+(const int &	num);
-	StringW operator+(const unsigned short &	num);
-	StringW operator+(const unsigned long &num);
-	StringW operator+(const long &	num);
-	StringW operator+(const double &num);
-	StringW operator+(const bool &	bf);
+	String(int64_t num):
+		StringBase(num)
+	{
 
-	////////////////////////////////////
-	//операции присвоения
+	}
 
-	StringW & operator=(const StringW & str);
+	String(uint64_t num):
+		StringBase(num)
+	{
+	}
 
-	StringW & operator=(const WCHAR *	str);
-	StringW & operator=(const WCHAR &	sym);
-	StringW & operator=(const int &	num);
-	StringW & operator=(const unsigned short &	num);
-	StringW & operator=(const unsigned long &	num);
-	StringW & operator=(const long &	num);
-	StringW & operator=(const double &	num);
-	StringW & operator=(const bool &	bf);
+	String(UINT num):
+		StringBase(num)
+	{
+	}
 
-	StringW & operator=(StringW && other);
+	String(double num):
+		StringBase(num)
+	{
+	}
 
-	////////////////////////////////////
-	//операции сложения строк объекта к которому применяется сложение и слагаемого
-	StringW & operator+=(const StringW &str);
+	String(float num):
+		StringBase(num)
+	{
+	}
+	explicit String(bool bf):
+		StringBase(bf)
+	{
+	}
 
-	StringW & operator+=(const WCHAR *	str);
-	StringW & operator+=(const WCHAR &	sym);
-	StringW & operator+=(const int &	num);
-	StringW & operator+=(const unsigned short &	num);
-	StringW & operator+=(const unsigned long &	num);
-	StringW & operator+=(const long &	num);
-	StringW & operator+=(const double &num);
-	StringW & operator+=(const bool &	bf);
+	String(const String &str):
+		StringBase(str)
+	{
+	}
 
-	////////////////////////////////////
-	//искоючить первое нахождение из строки
-	//возвращается новый объект String, который содержит результат
-	StringW operator-(const StringW & str);
+	String& operator=(const String &str)
+	{
+		return(StringBase::operator=(str));
+	}
 
-	StringW operator-(const WCHAR *	str);
-	StringW operator-(const WCHAR &	sym);
-	StringW operator-(const int &	num);
-	StringW operator-(const unsigned short &	num);
-	StringW operator-(const unsigned long &	num);
-	StringW operator-(const long &	num);
-	StringW operator-(const double &	num);
-	StringW operator-(const bool &	bf);
-
-	////////////////////////////////////
-	//исключает первое нахождение из данного объекта
-	StringW & operator-=(const StringW &str);
-
-	StringW & operator-=(const WCHAR *	str);
-	StringW & operator-=(const WCHAR &	sym);
-	StringW & operator-=(const int &	num);
-	StringW & operator-=(const unsigned short &	num);
-	StringW & operator-=(const unsigned long &	num);
-	StringW & operator-=(const long &	num);
-	StringW & operator-=(const double &num);
-	StringW & operator-=(const bool &	bf);
-
-	//////////////////////////////////////
-	//исключить все похожие нахождения
-	//возвращается новый объект StringW
-	StringW operator / (const StringW &str);
-
-	StringW operator/(const WCHAR *	str);
-	StringW operator/(const WCHAR &	sym);
-	StringW operator/(const int &	num);
-	StringW operator/(const unsigned short &	num);
-	StringW operator/(const unsigned long &	num);
-	StringW operator/(const long &	num);
-	StringW operator/(const double &	num);
-	StringW operator/(const bool &	bf);
-
-	////////////////////////////////////
-	//исключить все похожие нахождения
-	StringW & operator/=(const StringW &str);
-
-	StringW & operator/=(const WCHAR *	str);
-	StringW & operator/=(const WCHAR &	sym);
-	StringW & operator/=(const int &	num);
-	StringW & operator/=(const unsigned short &	num);
-	StringW & operator/=(const unsigned long &	num);
-	StringW & operator/=(const long &	num);
-	StringW & operator/=(const double &num);
-	StringW & operator/=(const bool &	bf);
-
-	////////////////////////////////////
-
-	bool operator==(const StringW &str) const;
-
-	bool operator==(const WCHAR *	str) const;
-	bool operator==(const WCHAR &	sym) const;
-	bool operator==(const int &		num) const;
-	bool operator==(const unsigned short &	num) const;
-	bool operator==(const unsigned long &	num) const;
-	bool operator==(const long &	num) const;
-	bool operator==(const double &	num) const;
-	bool operator==(const bool &	bf) const;
-
-	//////////////////////////////////////
-
-	bool operator!= (const StringW &str) const;
-
-	bool operator!=(const WCHAR *	str) const;
-	bool operator!=(const WCHAR &	sym) const;
-	bool operator!=(const int &		num) const;
-	bool operator!=(const unsigned short &	num) const;
-	bool operator!=(const unsigned long &	num) const;
-	bool operator!=(const long &	num) const;
-	bool operator!=(const double &	num) const;
-	bool operator!=(const bool &	bf) const;
-
-	//////////////////////////////////////
-	WCHAR & operator[](const unsigned long & num);
-	const WCHAR & operator[](const unsigned long & num) const;
-	//////////////////////////////////////
-
-	void insert(unsigned int pos, const WCHAR * data);
-	void insert(unsigned int pos, const StringW & data);
-
-	unsigned long length() const;
-	unsigned long find(const WCHAR & c, unsigned long pos = 0) const;
-	unsigned long find(const WCHAR * str, unsigned long pos = 0) const;
-	unsigned long find(const StringW & str, unsigned long pos = 0) const;
-
-	unsigned long find_last_of(const WCHAR & c, unsigned long pos = 0) const;
-	unsigned long find_last_of(const WCHAR * str, unsigned long pos = 0) const;
-	unsigned long find_last_of(const StringW & str, unsigned long pos = 0) const;
-
-	unsigned long replace(const WCHAR * str, const WCHAR * replace, unsigned long pos);
-	unsigned long replace(const StringW & str, const StringW & replace, unsigned long pos);
-
-	unsigned long replaceAll(const WCHAR * str, const WCHAR * replace);
-	unsigned long replaceAll(const StringW & str, const StringW & replace);
-
-	StringW substr(unsigned long pos, unsigned long lenght = 0) const;
-	unsigned int remove(unsigned long pos, unsigned long lenght);
-
-	StringW trim();
-
-	const WCHAR * c_str() const;
-
-	void reserve(int length);
-	void appendReserve(int length);
-
-	int		toInt() const;
-	long	toLongInt() const;
-	unsigned long	toUnsLongInt() const;
-	double	toDouble() const;
-	bool	toBool() const;
-
-	operator String() const;
-
-	bool operator<(const StringW & s) const;
-
-protected:
-	WCHAR * m_szString;
+	inline operator StringW() const;
 };
 
-/*bool operator<(const StringW & a, const StringW & b);
+class StringW: public StringBase<wchar_t, StringW>
+{
+public:
 
-StringW operator+(const WCHAR * a, const StringW & b);
-StringW operator+(const StringW & a, const WCHAR * b);*/
+	using StringBase::operator=;
+	using StringBase::operator+;
+	using StringBase::operator+=;
+	using StringBase::operator-=;
+	using StringBase::operator-;
+	using StringBase::operator/;
+	using StringBase::operator/=;
+
+	StringW():
+		StringBase()
+	{
+	}
+
+	StringW(const StringW &str):
+		StringBase(str)
+	{
+	}
+
+	StringW(const wchar_t *str):
+		StringBase(str)
+	{
+	}
+
+	StringW(wchar_t sym):
+		StringBase(sym)
+	{
+	}
+
+	StringW(int num):
+		StringBase(num)
+	{
+	}
+
+	StringW(int64_t num):
+		StringBase(num)
+	{
+
+	}
+
+	StringW(uint64_t num):
+		StringBase(num)
+	{
+	}
+
+	StringW(UINT num):
+		StringBase(num)
+	{
+	}
+
+	StringW(double num):
+		StringBase(num)
+	{
+	}
+
+	StringW(float num):
+		StringBase(num)
+	{
+	}
+
+	explicit StringW(bool bf):
+		StringBase(bf)
+	{
+	}
+
+	StringW& operator=(const StringW &str)
+	{
+		return(StringBase::operator=(str));
+	}
+
+	inline operator String() const;
+};
+
+inline String::operator StringW() const
+{
+	StringW result;
+	size_t len = length() + 1;
+
+	result.resize(len);
+
+#if defined(_WIN32)
+	MultiByteToWideChar(CP_UTF8, 0, c_str(), (int)len, &result[0], (int)len);
+#else
+	TODO("CHECK THIS");
+	mbstowcs(&result[0], c_str(), len);
+#endif
+
+	return(result);
+}
+
+inline StringW::operator String() const
+{
+	String result;
+
+#if defined(_WIN32)
+	size_t size = WideCharToMultiByte(CP_UTF8, 0, c_str(), (int)(length() + 1), NULL, 0, NULL, NULL);
+	result.resize(size);
+	WideCharToMultiByte(CP_UTF8, 0, c_str(), (int)(length() + 1), &result[0], (int)size, NULL, NULL);
+#else
+	TODO("CHECK THIS");
+	size_t len = length() + 1;
+	result.resize(size);
+	mbstowcs(&result[0], c_str(), len);
+#endif
+
+	return(result);
+}
+
+#pragma warning(pop)
 
 #endif
