@@ -874,7 +874,7 @@ public:
 	{
 		if(this != &str)
 		{
-			if(length() != str.length())
+			if(length() == str.length())
 			{
 				return(xstrcmp(c_str(), str.c_str()) == 0);
 			}
@@ -1163,14 +1163,14 @@ public:
 		return(replaceAll(str.c_str(), replace.c_str()));
 	}
 
-	Derived substr(size_t pos, size_t length = EOS) const
+	Derived substr(size_t pos, size_t len = EOS) const
 	{
 		if(pos >= length())
 		{
 			return(Derived());
 		}
 
-		if(length == 0)
+		if(len == 0)
 		{
 			return(Derived());
 		}
@@ -1178,15 +1178,15 @@ public:
 		Derived result;
 		const T *it = c_str() + pos;
 
-		if(length == EOS || length > length() - pos)
+		if(len == EOS || len > length() - pos)
 		{
-			length = length() - pos;
+			len = length() - pos;
 		}
 
-		T *str = (T*)_malloca(sizeof(T) * (length + 1));
+		T *str = (T*)_malloca(sizeof(T) * (len + 1));
 
-		xstrncpy(str, it, length);
-		str[length] = 0;
+		xstrncpy(str, it, len);
+		str[len] = 0;
 
 		result = str;
 
@@ -1195,36 +1195,36 @@ public:
 		return(result);
 	}
 
-	size_t remove(size_t pos, size_t length)
+	size_t remove(size_t pos, size_t size)
 	{
 		size_t len = length();
 
-		if(pos >= len || length == 0)
+		if(pos >= len || size == 0)
 		{
 			return(0);
 		}
 
-		if(length > len - pos)
+		if(size > len - pos)
 		{
-			length = len - pos;
+			size = len - pos;
 		}
 
 		T *str = m_isStack ? m_data.stack.szStr : m_data.heap.szStr;
 		T *it = str + pos;
-		size_t count = len - (it - str) - length;
+		size_t count = len - (it - str) - size;
 
-		xmemmove(it, it + length, count + 1);
+		xmemmove(it, it + size, count + 1);
 
 		if(m_isStack)
 		{
-			m_data.stack.size -= length;
+			m_data.stack.size -= size;
 		}
 		else
 		{
-			m_data.heap.size -= length;
+			m_data.heap.size -= size;
 		}
 
-		return(length);
+		return(size);
 	}
 
 	Derived trim()
