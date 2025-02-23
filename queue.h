@@ -72,6 +72,13 @@ public:
 		return(false);
 	}
 
+	bool empty()
+	{
+		ScopedSpinLock lock(m_lock);
+
+		return(m_pHeadNode == NULL);
+	}
+
 private:
 
 	struct QueueNode
