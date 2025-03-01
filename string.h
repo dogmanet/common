@@ -273,6 +273,8 @@ public:
 			m_data.heap.capacity = 0;
 			m_isStack = true;
 		}
+		m_data.stack.szStr[0] = 0;
+		m_data.stack.size = 0;
 	}
 
 	Derived operator+(const Derived &str) const
