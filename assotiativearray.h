@@ -677,38 +677,34 @@ public:
 	class Iterator
 	{
 	private:
-		Stack<const Node*> nodes;
-		const Node * CurNode;
+		const Node *m_pCurNode;
 
 		bool IsEnd;
 	public:
-		const SX_KEYTYPE * first;
-		SX_VALTYPE * second;
+		const SX_KEYTYPE *first;
+		SX_VALTYPE *second;
 
-		Iterator(const Iterator & it)
+		Iterator(const Iterator &it)
 		{
-			this->nodes = it.nodes;
 			this->first = it.first;
 			this->second = it.second;
 			this->IsEnd = it.IsEnd;
-			this->CurNode = it.CurNode;
+			this->m_pCurNode = it.m_pCurNode;
 		}
 
-		Iterator(const Node * node)
+		Iterator(const Node *node)
 		{
 			if(node)
 			{
-				const Node * tmpNode = node;
+				const Node *tmpNode = node;
 				while(tmpNode)
 				{
-					nodes.push(tmpNode);
 					if(!tmpNode->Left)
 					{
 						this->IsEnd = false;
 						this->first = &(tmpNode->Key);
 						this->second = tmpNode->Val;
-						this->CurNode = tmpNode;
-						nodes.popN(1);
+						this->m_pCurNode = tmpNode;
 					}
 					tmpNode = tmpNode->Left;
 				}
@@ -718,32 +714,27 @@ public:
 				IsEnd = true;
 				this->first = NULL;
 				this->second = NULL;
-				this->CurNode = NULL;
+				this->m_pCurNode = NULL;
 			}
 		}
-		~Iterator()
-		{
 
-		}
-
-		Iterator & operator=(Iterator const & it)
+		Iterator& operator=(Iterator const &it)
 		{
-			this->nodes = it.nodes;
 			this->first = it.first;
 			this->second = it.second;
 			this->IsEnd = it.IsEnd;
-			this->CurNode = it.CurNode;
+			this->m_pCurNode = it.m_pCurNode;
 			return(*this);
 		}
 
-		bool operator==(const Iterator & c)
+		bool operator==(const Iterator &c)
 		{
-			return(c.CurNode == this->CurNode && c.IsEnd == this->IsEnd);
+			return(c.m_pCurNode == m_pCurNode);
 		}
 
-		bool operator!=(const Iterator & c)
+		bool operator!=(const Iterator &c)
 		{
-			return(!(c.CurNode == this->CurNode && c.IsEnd == this->IsEnd));
+			return(c.m_pCurNode != m_pCurNode);
 		}
 
 		operator bool()
@@ -753,42 +744,45 @@ public:
 
 		Iterator& operator++()
 		{
-			if(!this->CurNode && this->nodes.IsEmpty())
+			if(m_pCurNode)
 			{
-				IsEnd = true;
-				this->first = NULL;
-				this->second = NULL;
-				this->CurNode = NULL;
-				return(*this);
-			}
+				if(m_pCurNode->Right)
+				{
+					// find leftmost in m_pCurNode->Right
+					m_pCurNode = m_pCurNode->Right;
+					while(m_pCurNode->Left)
+					{
+						m_pCurNode = m_pCurNode->Left;
+					}
 
-			if(this->CurNode->Right)
-			{
-				this->CurNode = this->CurNode->Right;
-			}
-			else
-			{
-				this->CurNode = NULL;
-			}
-			while(this->CurNode)
-			{
-				this->nodes.push(this->CurNode);
-				this->CurNode = this->CurNode->Left;
-			}
+					this->first = &(m_pCurNode->Key);
+					this->second = m_pCurNode->Val;
+				}
+				else
+				{
+					// find next parent
+					const Node *pTempNode = m_pCurNode;
+					while(pTempNode)
+					{
+						if(!pTempNode->Parent)
+						{
+							IsEnd = true;
+							m_pCurNode = NULL;
+							this->first = NULL;
+							this->second = NULL;
+						}
+						else if(pTempNode->Parent->Right != pTempNode)
+						{
+							m_pCurNode = pTempNode->Parent;
 
-			if(!this->nodes.IsEmpty())
-			{
-				this->nodes.pop(&this->CurNode);
-				this->first = &(this->CurNode->Key);
-				this->second = this->CurNode->Val;
-				return(*this);
-			}
-			if(!this->CurNode)
-			{
-				IsEnd = true;
-				this->first = NULL;
-				this->second = NULL;
-				this->CurNode = NULL;
+							this->first = &(m_pCurNode->Key);
+							this->second = m_pCurNode->Val;
+							break;
+						}
+
+						pTempNode = pTempNode->Parent;
+					}
+				}
 			}
 			return(*this);
 		}
@@ -798,147 +792,7 @@ public:
 			return(++(*this));
 		}
 	};
-	/*
-		class iterator
-		{
-		private:
-		//Stack<const Node*> nodes;
-		const Node * CurNode;
-		//const Node * NextNode;
-
-		bool IsEnd;
-		bool OnRight;
-		struct pair
-		{
-		const SX_KEYTYPE * first;
-		SX_VALTYPE * second;
-		};
-
-		pair Data;
-		public:
-		//const SX_KEYTYPE * first;
-		//SX_VALTYPE * second;
-
-		iterator(const Iterator & it)
-		{
-		this->nodes = it.nodes;
-		this->Data = it.Data;
-		this->IsEnd = it.IsEnd;
-		this->CurNode = it.CurNode;
-		//this->NextNode = it.NextNode;
-		this->OnRight = it.OnRight;
-		}
-
-		iterator(const Node * node)
-		{
-		if(node)
-		{
-		const Node * tmpNode = node;
-		while(tmpNode)
-		{
-		//nodes.push(tmpNode);
-		if(!tmpNode->Left)
-		{
-		this->IsEnd = false;
-		this->Data.first = &(tmpNode->Key);
-		this->Data.second = tmpNode->Val;
-		this->CurNode = tmpNode;
-		//this->NextNode = this->CurNode->Parent;
-		this->OnRight = false;
-		//nodes.pop();
-		}
-		tmpNode = tmpNode->Left;
-		}
-		}
-		else
-		{
-		IsEnd = true;
-		this->Data.first = NULL;
-		this->Data.second = NULL;
-		this->CurNode = NULL;
-		//this->NextNode = NULL;
-		}
-		}
-		~iterator()
-		{
-
-		}
-
-		iterator & operator=(Iterator const & it)
-		{
-		this->nodes = it.nodes;
-		this->Data = it.Data;
-		this->IsEnd = it.IsEnd;
-		this->CurNode = it.CurNode;
-		//this->NextNode = it.NextNode;
-		this->OnRight = it.OnRight;
-		return(*this);
-		}
-
-		bool operator==(const Iterator & c)
-		{
-		return(c.CurNode == this->CurNode / *&& c.NextNode == this->NextNode * /&& c.IsEnd == this->IsEnd);
-		}
-
-		bool operator!=(const Iterator & c)
-		{
-		return(!(c.CurNode == this->CurNode / *&& c.NextNode == this->NextNode * /&& c.IsEnd == this->IsEnd));
-		}
-
-		operator bool()
-		{
-		return(!this->IsEnd);
-		}
-
-		pair * operator->()
-		{
-		return(&Data);
-		}
-
-		iterator operator++(int)
-		{
-		if(this->CurNode->Right && !this->OnRight)
-		{
-		const Node * tmpNode = this->CurNode->Right;
-		while(tmpNode)
-		{
-		//nodes.push(tmpNode);
-		if(!tmpNode->Left)
-		{
-		this->IsEnd = false;
-		this->Data.first = &(tmpNode->Key);
-		this->Data.second = tmpNode->Val;
-		this->CurNode = tmpNode;
-		//this->NextNode = this->CurNode->Parent;
-		this->OnRight = true;
-		//nodes.pop();
-		}
-		tmpNode = tmpNode->Left;
-		}
-		}
-		else
-		{
-		this->CurNode = this->CurNode->Parent;
-		this->IsEnd = false;
-		this->Data.first = &(tmpNode->Key);
-		this->Data.second = tmpNode->Val;
-		this->OnRight = false;
-		}
-
-
-		if(!this->CurNode)
-		{
-		IsEnd = true;
-		this->Data.first = NULL;
-		this->Data.second = NULL;
-		this->CurNode = NULL;
-		this->NextNode = NULL;
-		}
-		return(*this);
-		}
-		};
-		*/
-
+	
 	AssotiativeArray():RootNode(NULL), Size_(0), TmpNode(NULL)
 	{
 		//printf("AssotiativeArray()\n");
