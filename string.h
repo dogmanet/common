@@ -1229,7 +1229,7 @@ public:
 		return(size);
 	}
 
-	Derived trim()
+	Derived trim() const
 	{
 		UINT pos = length();
 		UINT len = 0;
